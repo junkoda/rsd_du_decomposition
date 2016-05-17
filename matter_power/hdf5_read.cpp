@@ -56,7 +56,7 @@ void hdf5_read(const char filename[], vector<ParticleData>& v,
   read_data_table(file, "x", p->x, n, 3, stride);
     
   // radial velocities
-  read_data_table(file, "v", p->v, n, 1, stride);
+  read_data_table(file, "v", p->v, n, 3, stride);
     
   H5Fclose(file);
 }
@@ -93,7 +93,7 @@ void read_data_table(hid_t loc, const char name[],
   const hsize_t data_size_mem= stride*nx;
   hid_t dataspace_mem= H5Screate_simple(1, &data_size_mem, 0);
   const hsize_t offset= 0;
-  const hsize_t block_size= ny;
+  const hsize_t block_size=  ny;
   const hsize_t block_count= nx;
 
   H5Sselect_hyperslab(dataspace_mem, H5S_SELECT_SET,

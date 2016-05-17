@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
   float boxsize= 0.0f;
   float a, omega_m, omega_l;
 
-  if(filename.substr(filename.length() - 4, 3) == string(".h5")) {
+  if(filename.substr(filename.length() - 3, 3) == string(".h5")) {
     hdf5_read(filename.c_str(), v, boxsize, omega_m, a);
     omega_l= 1.0f - omega_m;
   }
