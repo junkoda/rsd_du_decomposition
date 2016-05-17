@@ -15,7 +15,7 @@ DIR_PATH   = $(BOOST_DIR) $(HDF5_DIR) $(FFTW3_DIR)
 CXXFLAGS  := $(foreach dir, $(DIR_PATH), -I$(dir)/include)
 LIBS      := $(foreach dir, $(DIR_PATH), -L$(dir)/lib)
 
-OBJS = matter_power.o power_spectrum3b.o fft_mesh.o histogram.o hdf5_read.cpp
+OBJS = matter_power.o power_spectrum3b.o fft_mesh.o histogram.o hdf5_read.o
 LIBS      += -lm $(LIBS) -lboost_program_options -lfftw3f -lhdf5
 
 matter_power: $(OBJS)
