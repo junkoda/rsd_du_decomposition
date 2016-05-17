@@ -32,6 +32,8 @@ int main(int argc, char* argv[])
     ("filename", value<string>(), "Gadget particle file name")
     ("nc", value<int>()->default_value(128), "number of density mesh per dim")
     ("redshift-space,r", "redshift-space distortion in z direction")
+    ("dk", value<float>()->default_value(0.01f), "k bin size")
+    ("kmax", value<float>()->default_value(0), "maximum k in output if >0")
     ;
   
   positional_options_description p;
@@ -47,6 +49,8 @@ int main(int argc, char* argv[])
     return 0;
   }
 
+  const float dk= vm["dk"].as<float>(); assert(dk > 0.0f);
+  const float kmax= vm["kmax"].as<float>(); assert(kmax > 0.0f);
   const int nc= vm["nc"].as<int>(); assert(nc > 0);
 
   vector<ParticleData> v;
@@ -89,7 +93,7 @@ int main(int argc, char* argv[])
   const float nbar= 0.0f; 
   const float neff= -1.6f;
 
-  calc_power_spectrum_sa(nc, boxsize, dmesh.data(), nbar, neff);
+  calc_power_spectrum_sa(nc, boxsize, dmesh.data(), nbar, neff, dk, kmax);
   
   return 0;
 }
