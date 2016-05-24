@@ -18,7 +18,7 @@ OBJS1 += binary_tree.o nbr_finder.o fft_mesh.o
 OBJS1 += halo_file.o
 OBJS1 += nearest_nbr_velocity.o power_spectrum3b_v.o histogram.o
 OBJS1 += transformation.o density_mesh.o
-OBJS1 += hdf5_write.o
+OBJS1 += hdf5_write.o hdf5_read.o
 
 LIBS1 = -lm -lboost_program_options-mt -lfftw3f -lgsl -lgslcblas -lhdf5
 

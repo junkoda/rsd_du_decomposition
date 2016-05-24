@@ -14,6 +14,7 @@
 #include "transformation.h"
 #include "density_mesh.h"
 #include "hdf5_write.h"
+#include "hdf5_read.h"
 
 using namespace std;
 using namespace boost::program_options;
@@ -28,14 +29,14 @@ int main(int argc, char* argv[])
   options_description opt("vpower_spectrum5 [options]");
   opt.add_options()
     ("help,h", "display this help")
-    ("fof-text", value<string>(), "FoF text file")
-    ("mock", value<string>(), "mock text file")
-    ("gadget-binary", value<string>(), "Gadget binary file")
+    //("fof-text", value<string>(), "FoF text file")
+    //("mock", value<string>(), "mock text file")
+    //("gadget-binary", value<string>(), "Gadget binary file")
     ("nc", value<int>()->default_value(128), "number of density mesh per dim")
-    ("boxsize", value<float>()->default_value(1000.0f), 
-                                             "boxsize (for subfind case only)")
-    ("z", value<float>()->default_value(0.0f), "redshift for --redshift-space")
-    ("omegam", value<float>()->default_value(0.273, "0.273"), "omega_m necessary for --redshift-space")
+    //("boxsize", value<float>()->default_value(1000.0f), 
+    //                                             "boxsize (for subfind case only)")
+//("z", value<float>()->default_value(0.0f), "redshift for --redshift-space")
+//  ("omegam", value<float>()->default_value(0.273, "0.273"), "omega_m necessary for --redshift-space")
     ("logMmin", value<float>()->default_value(1,"1"), 
                  "log Minimum halo mass")
     ("logMmax", value<float>()->default_value(20,"20"), 
@@ -43,38 +44,54 @@ int main(int argc, char* argv[])
     ("m", value<float>()->default_value(0.75187e10),"particle mass for FoF file")
     ("dk", value<float>()->default_value(0.01f, "0.01"), "output k bin widtth")
     ("kmax", value<float>()->default_value(0.0f, "0"), "output kmax (default kNq)")
-    ("shot-noise", value<float>(), "value of white noize shot noise")
+    ("shot-noise", value<double>()->default_value(10.0), "value of white noize shot noise")
     ("2d", value<string>(), "output P(k,mu)")
     ("lambda", value<float>()->default_value(1.0f, "1"), "magnitude of RSD")
     ;
   
   positional_options_description p;
+  p.add("filename", -1);
   
   variables_map vm;
   store(command_line_parser(argc, argv).
 	options(opt).positional(p).run(), vm);
   notify(vm);
-  
-  if(vm.count("help") || 
-     !(vm.count("gadget-binary") || vm.count("fof-text") || vm.count("mock"))) {
+
+  if(vm.count("help") || ! vm.count("filename")) {
     cout << opt << "\n"; 
     return 0;
   }
 
 
   const int nc= vm["nc"].as<int>(); assert(nc > 0);
+  float lambda= vm["lambda"].as<float>();
+  /*
   float boxsize = vm["boxsize"].as<float>(); 
   float z= vm["z"].as<float>();
   float omega_m= vm["omegam"].as<float>();
-  float lambda= vm["lambda"].as<float>();
+  */
+
   
   //
   // Read particles
   //
   vector<ParticleData> v;
   float nbar= 0.0f;
-  
 
+  const string filename= vm["filename"].as<string>();
+  float boxsize= 0.0f;
+  float a, omega_m, z;
+
+  if(filename.substr(filename.length() - 3, 3) == string(".h5")) {
+    hdf5_read(filename.c_str(), v, boxsize, omega_m, a);
+    z= 1.0f/a - 1.0f;
+  }
+  else {
+    cerr << "Error: unknown data filename (not ending with .h5)\n";
+    return 1;
+  }
+
+  /*
   if(vm.count("fof-text")) {
     string filename= vm["fof-text"].as<string>();
     cout << "# fof-text " << filename << endl;
@@ -115,18 +132,16 @@ int main(int argc, char* argv[])
     cerr << "No input file --fof-text\n";
     return 1;
   }
-
+  */
+  
   if(v.empty()) {
     cerr << "Error: Zero particles\n";
     return 1;
   }
+  assert(boxsize > 0.0f);
 
-  size_t nrand= v.size();
-  float nrand_inv= boxsize*boxsize*boxsize/nrand;
-  if(vm.count("shot-noise")) {
-    nrand_inv= vm["shot-noise"].as<float>();
-    nrand= (size_t)(boxsize*boxsize*boxsize/nrand_inv);
-  }
+  const double nrand_inv= vm["shot-noise"].as<double>();
+  size_t nrand= (size_t)(boxsize*boxsize*boxsize/nrand_inv);
 
   fprintf(stderr, "nhalo= %lu; shot-noise=%.1f\n", v.size(), 1.0f/nbar);
   fprintf(stderr, "nrand= %lu; shot-noise=%.1f\n", nrand, nrand_inv);
@@ -143,7 +158,6 @@ int main(int argc, char* argv[])
   //
   // Mesh
   //
-  assert(boxsize > 0.0f);
 
   FFTmesh dmesh(nc), vmesh(nc);
 
