@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
     ("filename", value<string>(), "Gadget particle file name")
     ("nc", value<int>()->default_value(128), "number of density mesh per dim")
     ("redshift-space,r", "redshift-space distortion in z direction")
-    ("dk", value<float>()->default_value(0.01f), "k bin size")
+    ("dk", value<float>()->default_value(0.01f, "0.01"), "k bin size")
     ("kmax", value<float>()->default_value(0), "maximum k in output if >0")
     ;
   
