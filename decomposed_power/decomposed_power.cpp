@@ -26,22 +26,23 @@ int main(int argc, char* argv[])
   //
   // Command line options
   //
-  options_description opt("vpower_spectrum5 [options]");
+  options_description opt("decomposed_power [options] <filename>");
   opt.add_options()
     ("help,h", "display this help")
     //("fof-text", value<string>(), "FoF text file")
     //("mock", value<string>(), "mock text file")
     //("gadget-binary", value<string>(), "Gadget binary file")
+    ("filename", value<string>(), "particle file name")
     ("nc", value<int>()->default_value(128), "number of density mesh per dim")
     //("boxsize", value<float>()->default_value(1000.0f), 
     //                                             "boxsize (for subfind case only)")
 //("z", value<float>()->default_value(0.0f), "redshift for --redshift-space")
 //  ("omegam", value<float>()->default_value(0.273, "0.273"), "omega_m necessary for --redshift-space")
-    ("logMmin", value<float>()->default_value(1,"1"), 
-                 "log Minimum halo mass")
-    ("logMmax", value<float>()->default_value(20,"20"), 
-                 "log Maximum halo mass")
-    ("m", value<float>()->default_value(0.75187e10),"particle mass for FoF file")
+    //("logMmin", value<float>()->default_value(1,"1"), 
+    //             "log Minimum halo mass")
+    //("logMmax", value<float>()->default_value(20,"20"), 
+    //             "log Maximum halo mass")
+    //("m", value<float>()->default_value(0.75187e10),"particle mass for FoF file")
     ("dk", value<float>()->default_value(0.01f, "0.01"), "output k bin widtth")
     ("kmax", value<float>()->default_value(0.0f, "0"), "output kmax (default kNq)")
     ("shot-noise", value<double>()->default_value(10.0), "value of white noize shot noise")
