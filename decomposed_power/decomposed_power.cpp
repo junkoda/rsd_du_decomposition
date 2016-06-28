@@ -144,8 +144,8 @@ int main(int argc, char* argv[])
   const double nrand_inv= vm["shot-noise"].as<double>();
   size_t nrand= (size_t)(boxsize*boxsize*boxsize/nrand_inv);
 
-  fprintf(stderr, "nhalo= %lu; shot-noise=%.1f\n", v.size(), 1.0f/nbar);
-  fprintf(stderr, "nrand= %lu; shot-noise=%.1f\n", nrand, nrand_inv);
+  //fprintf(stderr, "nhalo= %lu; shot-noise=%.1f\n", v.size(), 1.0f/nbar);
+  //fprintf(stderr, "nrand= %lu; shot-noise=%.1f\n", nrand, nrand_inv);
 
   // Assign the nearest particle velocity to random particles
   

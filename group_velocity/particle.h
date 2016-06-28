@@ -12,9 +12,9 @@
 typedef struct {
   float_t  x[3];
   float_t  v[3];
-  float_t  dx1[3];  // 1LPT (ZA) displacement
-  float_t  dx2[3];  // 2LPT displacement
-  uint64_t id;      // Particle index 1,2,3...
+  //float_t  dx1[3];  // 1LPT (ZA) displacement
+  //float_t  dx2[3];  // 2LPT displacement
+  //uint64_t id;      // Particle index 1,2,3...
 } Particle;
 
 typedef struct {

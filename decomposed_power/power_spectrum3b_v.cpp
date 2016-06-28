@@ -223,6 +223,8 @@ void calc_power_spectrum_sa_2d(const int nc, const float boxsize, const float de
   const float nbar_inv= nbar > 0.0f ? 1.0/nbar : 0.0f;
   const float nbar_inv_u= nbar_u > 0.0f ? 1.0/nbar_u : 0.0f;
 
+  printf("# shot-noise= %.1f %.1f\n", nbar_inv, nbar_inv_u);
+
   if(kmax == 0.0f) kmax= nc*M_PI/boxsize; //Nyquist frequency
     
   const double dmu= 0.1;
