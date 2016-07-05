@@ -48,6 +48,7 @@ int main(int argc, char* argv[])
     ("shot-noise", value<double>()->default_value(10.0), "value of white noize shot noise")
     ("2d", value<string>(), "output P(k,mu)")
     ("lambda", value<float>()->default_value(1.0f, "1"), "magnitude of RSD")
+    ("write-random", value<string>(), "write random particle position and velocity to HDF5")
     ;
   
   positional_options_description p;
@@ -91,6 +92,9 @@ int main(int argc, char* argv[])
     cerr << "Error: unknown data filename (not ending with .h5)\n";
     return 1;
   }
+
+  cerr << "sizeof(ParticleData) = " << sizeof(ParticleData) << endl;
+  cerr << "vector<ParticleData> " << sizeof(ParticleData)*v.size()/(1000*1000) << " Mbytes" << endl;
 
   /*
   if(vm.count("fof-text")) {
@@ -152,6 +156,12 @@ int main(int argc, char* argv[])
   vector<ParticleData> vrand;
   calculate_nearest_particle_u(v, boxsize, vrand, nrand);
 
+  if(vm.count("write-random")) {
+    string filename = vm["write-random"].as<string>();
+    hdf5_write_particles(filename.c_str(), vrand, boxsize);
+  }
+  
+
   // Redshift-space distortion
   redshift_space_distortion(v, z, omega_m, lambda);
   redshift_space_distortion(vrand, z, omega_m, lambda);
@@ -161,6 +171,9 @@ int main(int argc, char* argv[])
   //
 
   FFTmesh dmesh(nc), vmesh(nc);
+
+  cerr << "mesh nc = " << nc << endl;
+  cerr << sizeof(float)*nc*nc*nc*2/(1000*1000) << " Mbytes" << endl;
 
   // Calculate delta^s and delta^s[U]
   calculate_cic_density_mesh(v, boxsize, nc, dmesh.data());

@@ -37,11 +37,15 @@ void calculate_nearest_particle_u(vector<ParticleData>& v, const float boxsize,
 
   cerr << "building kdtree...\n";
 
+  const int ntree_alloc= v.size();
   const int np= v.size();
   const int quota = 8;
   nbr_finder::set_boxsize(boxsize);
 
-  BinaryTree* const tree= new BinaryTree[np];
+  cerr << "ntree_alloc = " << ntree_alloc << endl;
+  cerr << sizeof(BinaryTree)*ntree_alloc/(1000*1000) << " Mbytes" << endl;
+  
+  BinaryTree* const tree= new BinaryTree[ntree_alloc];
   index_t ntree= tree->construct(&v.front(), np, quota);
   cerr << ntree << " trees used. searching nearest neighbors...\n";
   KthValue* knbrs= new KthValue(1);
