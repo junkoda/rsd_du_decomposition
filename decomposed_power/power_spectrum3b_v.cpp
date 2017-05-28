@@ -37,6 +37,8 @@ void Output2D::alloc(const int nk_, const int nmu_)
   nmu= nmu_;
 
   const int nbin= nk*nmu;
+
+  free(k);
   
   k=   (float*) malloc(sizeof(float)*nbin*5); assert(k);
   mu=  k   + nbin;
