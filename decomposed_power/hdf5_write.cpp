@@ -46,6 +46,8 @@ void hdf5_write(const char filename[], Output2D* const out, const float z, const
 
   
   H5Fclose(file);
+
+  cerr << filename << " written\n";
 }
 
 void hdf5_write_particles(const char filename[],

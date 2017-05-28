@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <vector>
+#include <string>
+#include <sstream>
 #include <boost/program_options.hpp>
 #include <gsl/gsl_rng.h>
 
@@ -20,6 +22,7 @@ using namespace std;
 using namespace boost::program_options;
 
 void subtract(float * const s, float const * const u, const int nc);
+static vector<double> split(string str);
   
 int main(int argc, char* argv[])
 {
@@ -46,9 +49,11 @@ int main(int argc, char* argv[])
     ("dk", value<float>()->default_value(0.01f, "0.01"), "output k bin widtth")
     ("kmax", value<float>()->default_value(0.0f, "0"), "output kmax (default kNq)")
     ("shot-noise", value<double>()->default_value(10.0), "value of white noize shot noise")
-    ("2d", value<string>(), "output P(k,mu)")
-    ("lambda", value<float>()->default_value(1.0f, "1"), "magnitude of RSD")
-    ("write-random", value<string>(), "write random particle position and velocity to HDF5")
+    ("2d", "output P(k,mu)")
+    //("lambda", value<float>()->default_value(1.0f, "1"), "magnitude of RSD")
+    ("lambda", value<string>()->default_value("1.0", "1"), "magnitude of RSD, 1.0,1.1")
+    ("write-random", value<string>(), "=<filename.h5> write random particle position and velocity to HDF5")
+    ("odir,o", value<string>()->default_value("."), "output directory")
     ;
   
   positional_options_description p;
@@ -66,12 +71,9 @@ int main(int argc, char* argv[])
 
 
   const int nc= vm["nc"].as<int>(); assert(nc > 0);
-  float lambda= vm["lambda"].as<float>();
-  /*
-  float boxsize = vm["boxsize"].as<float>(); 
-  float z= vm["z"].as<float>();
-  float omega_m= vm["omegam"].as<float>();
-  */
+  //const float lambda= vm["lambda"].as<float>();
+  const string str_lambdas= vm["lambda"].as<string>();
+  vector<double> lambdas = split(str_lambdas);
 
   
   //
@@ -95,49 +97,6 @@ int main(int argc, char* argv[])
 
   cerr << "sizeof(ParticleData) = " << sizeof(ParticleData) << endl;
   cerr << "vector<ParticleData> " << sizeof(ParticleData)*v.size()/(1000*1000) << " Mbytes" << endl;
-
-  /*
-  if(vm.count("fof-text")) {
-    string filename= vm["fof-text"].as<string>();
-    cout << "# fof-text " << filename << endl;
-
-    const float m= vm["m"].as<float>(); assert(m > 0.0f);
-    const float logMmin= vm["logMmin"].as<float>();
-    const float logMmax= vm["logMmax"].as<float>();
-
-    read_fof_text(filename.c_str(), v, m, logMmin, logMmax);
-    printf("# M %4.2e - %4.2e\n", logMmin, logMmax); 
-    nbar= v.size() / (boxsize*boxsize*boxsize);
-  }
-  else if(vm.count("mock")) {
-    string filename= vm["mock"].as<string>();
-    cout << "# mock " << filename << endl;
-    read_mock_text(filename.c_str(), v);
-    nbar= v.size()/(boxsize*boxsize*boxsize);
-  }
-  else if(vm.count("gadget-binary")) {
-    string filename= vm["gadget-binary"].as<string>();
-    cout << "# gadget-binary " << filename << endl;
-
-    gadget_file<particle_data_sph_all, ParticleData> gf;
-    gf.set_velocity_conversion(true);
-
-    gf.set_cdm(&v, 1);
-    if(!gf.read(filename.c_str())) {
-      cerr << "Unable to read gadget file: " << filename << endl;
-      throw filename;
-    }
-
-    gadget_header1* header= gf.get_header();
-    omega_m= header->omega0;
-    z= header->redshift;
-    boxsize= header->boxsize;
-  }
-  else {
-    cerr << "No input file --fof-text\n";
-    return 1;
-  }
-  */
   
   if(v.empty()) {
     cerr << "Error: Zero particles\n";
@@ -147,11 +106,6 @@ int main(int argc, char* argv[])
 
   const double nrand_inv= vm["shot-noise"].as<double>();
   size_t nrand= (size_t)(boxsize*boxsize*boxsize/nrand_inv);
-
-  //fprintf(stderr, "nhalo= %lu; shot-noise=%.1f\n", v.size(), 1.0f/nbar);
-  //fprintf(stderr, "nrand= %lu; shot-noise=%.1f\n", nrand, nrand_inv);
-
-  // Assign the nearest particle velocity to random particles
   
   vector<ParticleData> vrand;
   calculate_nearest_particle_u(v, boxsize, vrand, nrand);
@@ -163,8 +117,8 @@ int main(int argc, char* argv[])
   
 
   // Redshift-space distortion
-  redshift_space_distortion(v, z, omega_m, lambda);
-  redshift_space_distortion(vrand, z, omega_m, lambda);
+  //redshift_space_distortion(v, z, omega_m, lambda);
+  //redshift_space_distortion(vrand, z, omega_m, lambda);
   
   //
   // Mesh
@@ -175,39 +129,51 @@ int main(int argc, char* argv[])
   cerr << "mesh nc = " << nc << endl;
   cerr << sizeof(float)*nc*nc*nc*2/(1000*1000) << " Mbytes" << endl;
 
-  // Calculate delta^s and delta^s[U]
-  calculate_cic_density_mesh(v, boxsize, nc, dmesh.data());
-  calculate_cic_density_mesh(vrand, boxsize, nc, vmesh.data());
+
+  for(vector<double>::iterator lmbda= lambdas.begin(); lmbda != lambdas.end();
+      ++lmbda) {
+    cerr << "lambda= " << *lmbda << endl;
+    dmesh.clear();
+    vmesh.clear();
+
+    // Calculate delta^s and delta^s[U]
+    calculate_cic_density_mesh(v, boxsize, nc, z, omega_m, *lmbda,
+			       dmesh.data());
+    calculate_cic_density_mesh(vrand, boxsize, nc, z, omega_m, *lmbda,
+			       vmesh.data());
   
-  // FFT
-  cerr << "FFT...\n";
-  dmesh.fft(); vmesh.fft();
+    // FFT
+    cerr << "FFT...\n";
+    dmesh.fft(); vmesh.fft();
 
-  // Subtract delta^s[D] = delta^s - delta^s[U]
-  subtract(dmesh.data(), vmesh.data(), nc);
+    // Subtract delta^s[D] = delta^s - delta^s[U]
+    subtract(dmesh.data(), vmesh.data(), nc);
 
 
-  // Power spectrum calculation
-  const float neff= -1.6f;
-  const float dk= vm["dk"].as<float>();
-  const float kmax= vm["kmax"].as<float>();
+    // Power spectrum calculation
+    const float neff= -1.6f;
+    const float dk= vm["dk"].as<float>();
+    const float kmax= vm["kmax"].as<float>();
 
-  if(vm.count("2d")) {
-    Output2D out;
-    calc_power_spectrum_sa_2d(nc, boxsize, dmesh.data(), vmesh.data(),
-			      nbar, 1/nrand_inv, neff, dk, kmax, &out);
+    string odir= vm["odir"].as<string>();
+    char ofilename[256];
+    if(vm.count("2d")) {
+      Output2D out;
+      
+      calc_power_spectrum_sa_2d(nc, boxsize, dmesh.data(), vmesh.data(),
+				nbar, 1/nrand_inv, neff, dk, kmax, &out);
 
-    string fileout= vm["2d"].as<string>();
-    if (fileout == "") {
-      fileout="out.h5";
+      sprintf(ofilename, "%s/lambda_%.2lf.h5", odir.c_str(), *lmbda);
+
+      hdf5_write(ofilename, &out, z, omega_m, *lmbda);
     }
-    hdf5_write(fileout.c_str(), &out, z, omega_m, lambda);
-  }
-  else {
-    calc_power_spectrum_sa(nc, boxsize, dmesh.data(), vmesh.data(),
+    
+    sprintf(ofilename, "%s/power_%.2lf.txt", odir.c_str(), *lmbda);
+    calc_power_spectrum_sa(ofilename, nc, boxsize, dmesh.data(), vmesh.data(),
 			   nbar, 1/nrand_inv, neff, dk, kmax);
-  }
 
+  }
+  
   return 0;
 }
 
@@ -218,4 +184,23 @@ void subtract(float * const s, float const * const u, const int nc)
 
   for(int i=0; i<nmesh; ++i)
     s[i] -= u[i];
+}
+
+vector<double> split(string str)
+{
+  //string str = "1,2,3,4,5,6";
+  vector<double> v;
+
+  stringstream ss(str);
+
+  double x;
+
+  while(ss >> x) {
+    v.push_back(x);
+
+    if (ss.peek() == ',')
+      ss.ignore();
+  }
+
+  return v;
 }

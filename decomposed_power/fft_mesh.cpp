@@ -13,7 +13,7 @@ FFTmesh::FFTmesh(const int nc_) :
   plan= fftwf_plan_dft_r2c_3d(nc, nc, nc, mesh, (fftwf_complex*) mesh, 
 			      FFTW_ESTIMATE);
     
-  memset(mesh, 0, sizeof(float)*nmesh);
+  //memset(mesh, 0, sizeof(float)*nmesh);
 }
 
 void FFTmesh::fft()

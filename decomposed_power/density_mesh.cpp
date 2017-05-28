@@ -7,6 +7,9 @@ using namespace std;
 void calculate_cic_density_mesh(const vector<ParticleData>& v, 
 				const float boxsize,
 				const int nc,
+				const float z,
+				const float omega_m,
+				const float lambda,
 				float* const dmesh
 				)
 {
@@ -15,15 +18,24 @@ void calculate_cic_density_mesh(const vector<ParticleData>& v,
   const float dx_inv= nc/boxsize;
   const int ncz= 2*(nc/2+1);
 
+  const float a= 1.0f/(1.0f + z);
+  const float omega_l= 1.0f - omega_m;
+  const float H= 100.0*sqrt(omega_m/(a*a*a) + omega_l);
+
+  const float fac= lambda/(a*H); // 1/H0 [hinv Mpc/(km/s)]
+  cerr << "density_mesh fac= " << fac << endl;
+
   int ix[3], ix0[3], ix1[3];
   float w[3];
 
   cerr << "calculating cic grid\n";
 
   for(vector<ParticleData>::const_iterator p= v.begin(); p != v.end(); ++p) {
+    float x[]= {p->x[0], p->x[1], p->x[2] + fac*p->v[2]};
+
     for(int j=0; j<3; ++j) {
-      ix[j]= (int)floor(p->x[j]*dx_inv);
-      w[j]= 1.0f-(p->x[j]*dx_inv - ix[j]);  // CIC weight for left point
+      ix[j]= (int) floor(x[j]*dx_inv);
+      w[j]= 1.0f - (x[j]*dx_inv - ix[j]);  // CIC weight for left point
       ix0[j]= (ix[j] + nc) % nc;            // left grid (periodic)
       ix1[j]= (ix[j] + 1 + nc) % nc;        // right grid (periodic)
     }

@@ -28,6 +28,11 @@ Output2D::Output2D() :
 
 void Output2D::alloc(const int nk_, const int nmu_)
 {
+  if(nk == nk_ && nmu == nmu_) {
+    assert(k);
+    return;
+  }
+  
   nk= nk_;
   nmu= nmu_;
 
@@ -51,13 +56,13 @@ static inline float w(const float tx)
   return tx == 0.0f ? 1.0f : sin(tx)/tx;
 }
 
-void calc_power_spectrum_sa(const int nc, const float boxsize, const float delta_k[], const float u_k[], const float nbar, const float nbar_u, const float neff, const float dk, float kmax)
+void calc_power_spectrum_sa(const char filename[], const int nc, const float boxsize, const float delta_k[], const float u_k[], const float nbar, const float nbar_u, const float neff, const float dk, float kmax)
 {
   // Power spectrum subtracting shot noise and aliasing correction
   // P(k) ~ k^neff
   //const float dk= 2.0*M_PI/boxsize;
   const float knq= (M_PI*nc)/boxsize;
-  const float knq_inv= boxsize/(M_PI*nc);
+  //const float knq_inv= boxsize/(M_PI*nc);
   const float pk_fac= (boxsize*boxsize*boxsize)/pow((double)nc, 6);
   const float sin_fac= 0.5*boxsize/nc; //0.5*M_PI*knq_inv;
 
@@ -183,9 +188,12 @@ void calc_power_spectrum_sa(const int nc, const float boxsize, const float delta
   }
 
   //printf("# -sa; shot-noise subtraction + aliassing correction\n");
+
+  FILE* fp= fopen(filename, "w"); assert(fp);
+  
   for(int j=0; j<PDD.numbin(); ++j) {
     if(PDD.n(j) > 0)
-      printf("%e %d %e %e %e %e %e %e %e %e %e\n", 
+      fprintf(fp, "%e %d %e %e %e %e %e %e %e %e %e\n", 
 	     PDD.x(j), PDD.n(j),
 	     PDD.y(j),  PDU.y(j), PUU.y(j),
 	     P2DD.y(j), P2DU.y(j), P2UU.y(j),
@@ -204,6 +212,9 @@ void calc_power_spectrum_sa(const int nc, const float boxsize, const float delta
     // Column 10: P4s[DU](k)
     // Column 11: P4s[UU](k)
   }
+
+  fclose(fp);
+  cerr << filename << " written.\n";
 }
 
 void calc_power_spectrum_sa_2d(const int nc, const float boxsize, const float delta_k[], const float u_k[], const float nbar, const float nbar_u, const float neff, const float dk, float kmax, Output2D* const out)
@@ -212,7 +223,7 @@ void calc_power_spectrum_sa_2d(const int nc, const float boxsize, const float de
   // P(k) ~ k^neff
   //const float dk= 2.0*M_PI/boxsize;
   const float knq= (M_PI*nc)/boxsize;
-  const float knq_inv= boxsize/(M_PI*nc);
+  //const float knq_inv= boxsize/(M_PI*nc);
   const float pk_fac= (boxsize*boxsize*boxsize)/pow((double)nc, 6);
   const float sin_fac= 0.5*boxsize/nc; //0.5*M_PI*knq_inv;
 
