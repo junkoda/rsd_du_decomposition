@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
-#include <mpi.h>
+//#include <mpi.h>
 #include "particle.h"
 #include "msg.h"
 
