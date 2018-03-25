@@ -142,7 +142,9 @@ float read_fof_binary(const char filename[], vector<ParticleData>& v, const int 
   return boxsize;
 }
 
-void read_subsample_binary(const char filename[], vector<ParticleData>& v, float* const boxsize)
+void read_subsample_binary(const char filename[], vector<ParticleData>& v,
+			   float* const boxsize, float* const omega_m,
+			   float* const a)
 {
   FILE* fp= fopen(filename, "r");
   if(fp == 0) {
@@ -154,6 +156,8 @@ void read_subsample_binary(const char filename[], vector<ParticleData>& v, float
   int np=0, np_check=0;
   fread(header, sizeof(float), 6, fp);
   *boxsize= header[0];
+  *omega_m= header[2];
+  *a= header[4];
 
   fread(&np, sizeof(int), 1, fp);
   v.reserve(np);

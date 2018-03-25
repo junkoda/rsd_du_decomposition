@@ -11,6 +11,10 @@ void read_subhalo_text(const char filename[], std::vector<ParticleData>& v,
 		       const float logMmin, const float logMmax);
 
 float read_fof_binary(const char filename[], std::vector<ParticleData>& v, const int nfof_min);
-void read_subsample_binary(const char filename[], std::vector<ParticleData>& v, float* const boxsize);
+//void read_subsample_binary(const char filename[], std::vector<ParticleData>& v, float* const boxsize);
+void read_subsample_binary(const char filename[], std::vector<ParticleData>& v,
+			   float* const boxsize, float* const omega_m,
+			   float* const a);
+
 
 #endif

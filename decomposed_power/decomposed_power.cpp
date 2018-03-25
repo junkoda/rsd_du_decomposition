@@ -88,15 +88,21 @@ int main(int argc, char* argv[])
 
   if(filename.substr(filename.length() - 3, 3) == string(".h5")) {
     hdf5_read(filename.c_str(), v, boxsize, omega_m, a);
-    z= 1.0f/a - 1.0f;
+  }
+  else if(filename.substr(filename.length() - 2, 2) == string(".b")) {
+    read_subsample_binary(filename.c_str(), v, &boxsize, &omega_m, &a);
   }
   else {
     cerr << "Error: unknown data filename (not ending with .h5)\n";
     return 1;
   }
 
-  cerr << "sizeof(ParticleData) = " << sizeof(ParticleData) << endl;
+  z= 1.0f/a - 1.0f;
+
+  //cerr << "sizeof(ParticleData) = " << sizeof(ParticleData) << endl;
   cerr << "vector<ParticleData> " << sizeof(ParticleData)*v.size()/(1000*1000) << " Mbytes" << endl;
+
+  cerr << "omega_m: " << omega_m << " a: " << a << endl;
   
   if(v.empty()) {
     cerr << "Error: Zero particles\n";
