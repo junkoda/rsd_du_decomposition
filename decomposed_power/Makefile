@@ -1,4 +1,4 @@
-EXEC = decomposed_power
+EXEC = decomposed_power characteristic_function
 
 all: $(EXEC)
 
@@ -26,6 +26,16 @@ OBJS1 += hdf5_write.o hdf5_read.o
 
 decomposed_power: $(OBJS1)
 	$(CXX) $(OBJS1) $(LIBS) -o $@
+
+OBJS2 := characteristic_function.o
+OBJS2 += binary_tree.o nbr_finder.o fft_mesh.o
+OBJS2 += halo_file.o
+OBJS2 += nearest_nbr_velocity.o power_spectrum3b_v.o histogram.o
+OBJS2 += transformation.o density_mesh.o
+OBJS2 += hdf5_write.o hdf5_read.o
+
+characteristic_function: $(OBJS2)
+	$(CXX) $(OBJS2) $(LIBS) -o $@
 
 
 .PHONY: clean
