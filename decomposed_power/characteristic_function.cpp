@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
   options_description opt("decomposed_power [options] <filename>");
   opt.add_options()
     ("help,h", "display this help")
-    ("fof-text", value<string>(), "FoF text file")
+    ("fof-text", "FoF text file")
     //("mock", value<string>(), "mock text file")
     //("gadget-binary", value<string>(), "Gadget binary file")
     ("filename", value<string>(), "particle file name")
@@ -81,6 +81,10 @@ int main(int argc, char* argv[])
   //
 
   if(vm.count("fof-text")) {
+    //
+    // Read from text file
+    // nfof, x, y, z, vx, vy, vz
+    //
     const float m=  vm["m"].as<float>();
     const float logMmin= vm["logMmin"].as<float>();
     const float logMmax= vm["logMmax"].as<float>();
@@ -91,7 +95,7 @@ int main(int argc, char* argv[])
     
     read_fof_text(filename.c_str(), v, m, logMmin, logMmax);
   }
-  if(filename.substr(filename.length() - 3, 3) == string(".h5")) {
+  else if(filename.substr(filename.length() - 3, 3) == string(".h5")) {
     hdf5_read(filename.c_str(), v, boxsize, omega_m, a);
   }
   else if(filename.substr(filename.length() - 2, 2) == string(".b")) {
