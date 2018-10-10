@@ -129,9 +129,13 @@ int main(int argc, char* argv[])
   const double aH= 100.0*a*sqrt(omega_m/(a*a*a) + omega_l);
   vector<double> phi(nlambda);
 
+  long double sigma2= 0.0;
+
   for(vector<ParticleData>::iterator p= v.begin();
       p != v.end(); ++p) {
     double u= p->v[2]/aH;
+    
+    sigma2 += u*u;
 
     for(int ilambda=0; ilambda<nlambda; ++ilambda) {
       double lmbda= lambda_max*static_cast<double>(ilambda)/(nlambda - 1);
@@ -141,6 +145,7 @@ int main(int argc, char* argv[])
 
   const double np= static_cast<double>(v.size());
   
+  printf("# sigma_v %.15le\n", static_cast<double>(sigma2/np));
   for(int ilambda=0; ilambda<nlambda; ++ilambda) {
     double lmbda= lambda_max*static_cast<double>(ilambda)/(nlambda - 1);
     printf("%e %e\n", lmbda, phi[ilambda]/np);

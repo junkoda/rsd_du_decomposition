@@ -40,5 +40,5 @@ characteristic_function: $(OBJS2)
 
 .PHONY: clean
 clean :
-	rm -f $(EXEC) $(OBJS1)
+	rm -f $(EXEC) $(OBJS1) $(OBJS2)
 
