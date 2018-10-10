@@ -34,14 +34,14 @@ int main(int argc, char* argv[])
     //("gadget-binary", value<string>(), "Gadget binary file")
     ("filename", value<string>(), "particle file name")
     ("nc", value<int>()->default_value(128), "number of density mesh per dim")
-    //("boxsize", value<float>()->default_value(1000.0f), 
-    //                                             "boxsize (for subfind case only)")
+    ("boxsize", value<float>()->default_value(1000.0f), 
+     "boxsize (with --fof-text otherwise read from particle file)")
     ("z", value<float>()->default_value(0.0f), "redshift")
     ("omega_m", value<float>()->default_value(0.273, "0.273"),
      "Omega matter (z=0)")
-    ("logMmin", value<float>()->default_value(1,"1"), 
+    ("logMmin", value<float>()->default_value(1, "1"), 
                  "log Minimum halo mass")
-    ("logMmax", value<float>()->default_value(20,"20"), 
+    ("logMmax", value<float>()->default_value(20, "20"), 
                  "log Maximum halo mass")
     ("m", value<float>()->default_value(0.75187e10),"particle mass for FoF file")
     ("np", value<size_t>()->default_value(1000000),
@@ -62,9 +62,7 @@ int main(int argc, char* argv[])
   }
 
 
-  float omega_m= vm["omega_m"].as<float>();
-  float z= vm["z"].as<float>();
-  float a= 1.0f/(1.0f + z);
+
 
     
     //const int nc= vm["nc"].as<int>(); assert(nc > 0);
@@ -76,13 +74,20 @@ int main(int argc, char* argv[])
   vector<ParticleData> v;
 
   const string filename= vm["filename"].as<string>();
+
+  // parameters read from file or option
   float boxsize= 0.0f;
+  float omega_m= 0.0f, a;
   //
 
   if(vm.count("fof-text")) {
     const float m=  vm["m"].as<float>();
     const float logMmin= vm["logMmin"].as<float>();
     const float logMmax= vm["logMmax"].as<float>();
+    boxsize= vm["boxsize"].as<float>();
+    omega_m= vm["omega_m"].as<float>();
+    const float z= vm["z"].as<float>();
+    a= 1.0f/(1.0f + z);
     
     read_fof_text(filename.c_str(), v, m, logMmin, logMmax);
   }
@@ -97,7 +102,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  z= 1.0f/a - 1.0f;
+  //z= 1.0f/a - 1.0f;
 
   cerr << "vector<ParticleData> " <<
     sizeof(ParticleData)*v.size()/(1000*1000) << " Mbytes" << endl;
