@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 
   const double np= static_cast<double>(v.size());
   
-  printf("# sigma_v %.15le\n", static_cast<double>(sigma2/np));
+  printf("# sigma2_v %.15le\n", static_cast<double>(sigma2/np));
   for(int ilambda=0; ilambda<nlambda; ++ilambda) {
     double lmbda= lambda_max*static_cast<double>(ilambda)/(nlambda - 1);
     printf("%e %e\n", lmbda, phi[ilambda]/np);
