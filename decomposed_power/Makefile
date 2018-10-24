@@ -1,4 +1,4 @@
-EXEC = decomposed_power characteristic_function
+EXEC = decomposed_power characteristic_function correlation_function_uu
 
 all: $(EXEC)
 
@@ -28,17 +28,27 @@ decomposed_power: $(OBJS1)
 	$(CXX) $(OBJS1) $(LIBS) -o $@
 
 OBJS2 := characteristic_function.o
-OBJS2 += binary_tree.o nbr_finder.o fft_mesh.o
+OBJS2 += binary_tree.o nbr_finder.o
 OBJS2 += halo_file.o
-OBJS2 += nearest_nbr_velocity.o power_spectrum3b_v.o histogram.o
-OBJS2 += transformation.o density_mesh.o
+OBJS2 += nearest_nbr_velocity.o histogram.o
+OBJS2 += transformation.o 
 OBJS2 += hdf5_write.o hdf5_read.o
 
 characteristic_function: $(OBJS2)
 	$(CXX) $(OBJS2) $(LIBS) -o $@
 
+OBJS3 := correlation_function_uu.o
+OBJS3 += binary_tree.o nbr_finder.o
+OBJS3 += halo_file.o
+OBJS3 += nearest_nbr_velocity.o histogram.o
+OBJS3 += transformation.o 
+OBJS3 += hdf5_write.o hdf5_read.o
+
+correlation_function_uu: $(OBJS3)
+	$(CXX) $(OBJS3) $(LIBS) -o $@
+
 
 .PHONY: clean
 clean :
-	rm -f $(EXEC) $(OBJS1) $(OBJS2)
+	rm -f $(EXEC) $(OBJS1) $(OBJS2) $(OBJS3)
 
