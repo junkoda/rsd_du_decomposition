@@ -131,6 +131,8 @@ int main(int argc, char* argv[])
   vector<int> npair(nbin, 0);
   vector<double> xi_uu0(nbin, 0.0), xi_uu2(nbin, 0.0);
   long double sigma2= 0.0;
+
+  cerr << "pair counting..." << endl;
   
   for(size_t i=0; i<nrand; ++i) {
     float u= vrand[i].v[2]/(aH);
@@ -161,7 +163,7 @@ int main(int argc, char* argv[])
   printf("# nrand %zd\n", nrand);
   printf("# sigma2_v %.15le\n", (double)(sigma2/nrand));
 
-  for(int ibin=0; ibin<nbin; ++ibin) {
+  for(int ibin=0; ibin<nbin-1; ++ibin) {
     printf("%le %.15le %.15le %d\n",
 	   (static_cast<double>(ibin) + 0.5)*dr,
 	   xi_uu0[ibin]/aH,
