@@ -132,6 +132,7 @@ int main(int argc, char* argv[])
   vector<double> xi_uu0(nbin, 0.0), xi_uu2(nbin, 0.0);
   long double sigma2= 0.0;
 
+  const float half_boxsize= 0.5f*boxsize;
   cerr << "pair counting..." << endl;
   
   for(size_t i=0; i<nrand; ++i) {
@@ -140,10 +141,13 @@ int main(int argc, char* argv[])
     float const * const x= vrand[i].x;
     for(size_t j=i+1; j<nrand; ++j) {
       float const * const y= vrand[j].x;
-      r[0]= x[0] - y[0];
-      r[1]= x[1] - y[1];
-      r[2]= x[2] - y[2];
 
+      for(int k=0; k<3; ++k) {
+	r[k]= x[k] - y[k];
+	if(r[k] > half_boxsize) r[k] -= boxsize;
+	else if(r[k] < -half_boxsize) r[k] += boxsize;
+      }
+      
       float s2= r[0]*r[0] + r[1]*r[1] + r[2]*r[2];
 
       if(0.0 < s2 && s2 < r2_max) {
@@ -164,10 +168,14 @@ int main(int argc, char* argv[])
   printf("# sigma2_v %.15le\n", (double)(sigma2/nrand));
 
   for(int ibin=0; ibin<nbin-1; ++ibin) {
+    if(npair[ibin] > 0) {
+      xi_uu0[ibin] /= aH*npair[ibin];
+      xi_uu2[ibin] /= aH*npair[ibin];
+    }
+    
     printf("%le %.15le %.15le %d\n",
 	   (static_cast<double>(ibin) + 0.5)*dr,
-	   xi_uu0[ibin]/aH,
-	   xi_uu2[ibin]/aH,
+	   xi_uu0[ibin], xi_uu2[ibin],
 	   npair[ibin]);
   }
   
