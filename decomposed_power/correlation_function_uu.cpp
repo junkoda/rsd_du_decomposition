@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
     // 5.0 = (2l + 1) in Legendre multipole
     printf("%le %.15le %.15le %d\n",
 	   (static_cast<double>(ibin) + 0.5)*dr,
-	   5.0*xi_uu0[ibin],
+	   xi_uu0[ibin],
 	   5.0*xi_uu2[ibin],
 	   npair[ibin]);
   }
