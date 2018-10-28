@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include <string>
 #include <sstream>
 #include <boost/program_options.hpp>
@@ -18,6 +19,19 @@
 using namespace std;
 using namespace boost::program_options;
 
+void compute_statistics_dd(const vector<ParticleData>& vdata,
+			   const float boxsize,
+			   const float aH);
+
+void compute_statistics_uu(const vector<ParticleData>& v_rand,
+			   const float boxsize,
+			   const float aH);
+
+void compute_statistics_dduu(const vector<ParticleData>& vdata,
+			     const vector<ParticleData>& vrand,
+			     const float boxsize,
+			     const float aH);
+
 int main(int argc, char* argv[])
 {
   //
@@ -31,7 +45,7 @@ int main(int argc, char* argv[])
     //("gadget-binary", value<string>(), "Gadget binary file")
     ("filename", value<string>(), "particle file name")
     ("nc", value<int>()->default_value(128), "number of density mesh per dim")
-    ("boxsize", value<float>()->default_value(1000.0f), 
+    ("boxsize", value<float>()->default_value(0.0f), 
      "boxsize (with --fof-text otherwise read from particle file)")
     ("z", value<float>()->default_value(0.0f), "redshift")
     ("omega_m", value<float>()->default_value(0.273, "0.273"),
@@ -43,6 +57,8 @@ int main(int argc, char* argv[])
     ("m", value<float>()->default_value(0.75187e10),"particle mass for FoF file")
     ("np", value<size_t>()->default_value(1000000),
      "number of random particles")
+    ("uu", "compute only uu statistics")
+    ("dd", "compute only dd statistics")
     ;
   
   positional_options_description p;
@@ -116,27 +132,56 @@ int main(int argc, char* argv[])
   calculate_nearest_particle_u(v, boxsize, vrand, nrand);
 
   //
+  // Subsample data
+  //
+  cerr << "v subsampling " << v.size() << " -> ";
+  random_shuffle(v.begin(), v.end());
+  v.resize(nrand);
+  cerr << v.size() << endl;
+  
+
+  const float omega_l= 1.0 - omega_m;
+  const float aH= 100.0*a*sqrt(omega_m/(a*a*a) + omega_l);
+
+  if(vm.count("uu")) {
+    compute_statistics_uu(vrand, boxsize, aH);
+  }
+  else if(vm.count("dd")) {
+    compute_statistics_dd(v, boxsize, aH);
+  }
+  else {
+    compute_statistics_dduu(v, vrand, boxsize, aH);
+  }
+  
+  return 0;
+}
+
+void compute_statistics_uu(const vector<ParticleData>& vrand,
+			   const float boxsize,
+			   const float aH)
+{
+  //
   // Measure xi_uu
   //
-  const float dr = 1.0;
-  const float r_max = 200;
-  const float r2_max = r_max*r_max;
-
+  const float dr= 1.0;
+  const float r_max= 200;
+  const float r2_max= r_max*r_max;
+  const float half_boxsize= 0.5f*boxsize;
+  
   float r[3];
 
   const int nbin = round(r_max/dr) + 1;
 
-  const float omega_l= 1.0 - omega_m;
-  const double aH= 100.0*a*sqrt(omega_m/(a*a*a) + omega_l);
   vector<int> npair(nbin, 0);
   vector<double> xi_uu0(nbin, 0.0), xi_uu2(nbin, 0.0);
   long double sigma2= 0.0;
 
-  const float half_boxsize= 0.5f*boxsize;
   cerr << "pair counting..." << endl;
+
+  const size_t nrand= vrand.size();
   
   for(size_t i=0; i<nrand; ++i) {
-    float u= vrand[i].v[2]/(aH);
+    float u= vrand[i].v[2]/aH;
     sigma2 += u*u;
     float const * const x= vrand[i].x;
     for(size_t j=i+1; j<nrand; ++j) {
@@ -180,8 +225,294 @@ int main(int argc, char* argv[])
 	   5.0*xi_uu2[ibin],
 	   npair[ibin]);
   }
-  
-  return 0;
 }
 
+void compute_statistics_dduu(const vector<ParticleData>& vdata,
+			     const vector<ParticleData>& vrand,
+			     const float boxsize,
+			     const float aH)
+{
+  //
+  // Measure <DD (Delta u)^2>, <DR (Delta u)^2> ...
+  //
+  const float dr= 1.0;
+  const float r_max= 200;
+  const float r2_max= r_max*r_max;
+  const float half_boxsize= 0.5f*boxsize;
+  
+  float r[3];
+
+  const int nbin = round(r_max/dr) + 1;
+
+  vector<int> dd0(nbin, 0), dr_pairs(nbin, 0), rr_pairs(nbin, 0);
+  vector<double> dd2(nbin, 0.0);
+  vector<double> xi_dduu0(nbin, 0.0), xi_dduu2(nbin, 0.0);
+  vector<double> xi_druu0(nbin, 0.0), xi_druu2(nbin, 0.0);
+  vector<double> xi_uu0(nbin, 0.0), xi_uu2(nbin, 0.0);
+  vector<double> xi_ddu1(nbin, 0.0);
+  vector<double> xi_dru1(nbin, 0.0);
+  vector<double> xi_rru1(nbin, 0.0);
+
+  long double sigma2_dd= 0.0;
+  long double sigma2_uu= 0.0;
+
+  cerr << "DD pair counting..." << endl;
+
+  const size_t ndata= vdata.size(); assert(ndata > 0);
+
+  //
+  // DD
+  //
+  for(size_t i=0; i<ndata; ++i) {
+    float u= vdata[i].v[2]/aH;
+    sigma2_dd += u*u;
+    float const * const x= vdata[i].x;
+    for(size_t j=i+1; j<ndata; ++j) {
+      float const * const y= vdata[j].x;
+
+      for(int k=0; k<3; ++k) { // periodic wrapup
+	r[k]= x[k] - y[k];
+	if(r[k] > half_boxsize) r[k] -= boxsize;
+	else if(r[k] < -half_boxsize) r[k] += boxsize;
+      }
+
+      
+      float s2= r[0]*r[0] + r[1]*r[1] + r[2]*r[2];
+
+      if(0.0 < s2 && s2 < r2_max) {
+	float s = sqrt(s2);
+	float nu = r[2]/s;
+	float P2 = 1.5f*nu*nu - 0.5f;
+	float du = u - vdata[j].v[2]/aH; 
+	float du2 = du*du;
+
+	int ibin= static_cast<int>(s/dr);
+	dd0[ibin]++;
+	dd2[ibin] += P2;
+	xi_dduu0[ibin] += du2;
+	xi_dduu2[ibin] += du2*P2;
+	xi_ddu1[ibin]  += du*nu;
+      }
+    }
+  }
+
+  //
+  // DR
+  //
+  cerr << "DR pair counting..." << endl;
+  const size_t nrand= vrand.size(); assert(nrand > 0);
+  
+  for(size_t i=0; i<ndata; ++i) {
+    float u= vdata[i].v[2]/aH;
+    float const * const x= vdata[i].x;
+    for(size_t j=0; j<nrand; ++j) {
+      float const * const y= vrand[j].x;
+
+      for(int k=0; k<3; ++k) { // periodic wrapup
+	r[k]= x[k] - y[k];
+	if(r[k] > half_boxsize) r[k] -= boxsize;
+	else if(r[k] < -half_boxsize) r[k] += boxsize;
+      }
+      
+      float s2= r[0]*r[0] + r[1]*r[1] + r[2]*r[2];
+
+      if(0.0 < s2 && s2 < r2_max) {
+	float s = sqrt(s2);
+	float nu = r[2]/s;
+	float P2 = 1.5f*nu*nu - 0.5f;
+	float du = u - vrand[j].v[2]/aH; 
+	float du2 = du*du;
+
+	int ibin= static_cast<int>(s/dr);
+	dr_pairs[ibin]++;
+	xi_druu0[ibin] += du2;
+	xi_druu2[ibin] += du2*P2;
+	xi_dru1[ibin]  += du*nu;
+      }
+    }
+  }
+
+  //
+  // RR
+  //
+  cerr << "RR pair counting..." << endl;
+  
+  for(size_t i=0; i<nrand; ++i) {
+    float u= vrand[i].v[2]/aH;
+    sigma2_uu += u*u;
+    float const * const x= vrand[i].x;
+    for(size_t j=i+1; j<nrand; ++j) {
+      float const * const y= vrand[j].x;
+
+      for(int k=0; k<3; ++k) {
+	r[k]= x[k] - y[k];
+	if(r[k] > half_boxsize) r[k] -= boxsize;
+	else if(r[k] < -half_boxsize) r[k] += boxsize;
+      }
+      
+      float s2= r[0]*r[0] + r[1]*r[1] + r[2]*r[2];
+
+      if(0.0 < s2 && s2 < r2_max) {
+	float s = sqrt(s2);
+	float nu = r[2]/s;
+	float P2 = 1.5f*nu*nu - 0.5f;
+	float du = u - vrand[j].v[2]/aH; 
+	float du2 = du*du;
+
+	int ibin= static_cast<int>(s/dr);
+	rr_pairs[ibin]++;
+	xi_uu0[ibin]  += du2;
+	xi_uu2[ibin]  += du2*P2;
+	xi_rru1[ibin] += du*nu;
+      }
+    }
+  }
+
+  printf("# nrand %zd\n", nrand);
+  printf("# sigma2_dd %.15le\n", (double)(sigma2_dd/ndata));
+  printf("# sigma2_v  %.15le\n", (double)(sigma2_uu/nrand));
+
+  const double vol= boxsize*boxsize*boxsize;
+
+  for(int ibin=0; ibin<nbin-1; ++ibin) {
+    // bin range
+    double r_left= ibin*dr;
+    double r_right= (ibin + 1)*dr;
+    double r_mid= (ibin + 0.5)*dr;
+    double vol_bin= 4.0/3.0*M_PI*(pow(r_right, 3) - pow(r_left, 3));
+    double DD_mean= 0.5*ndata*((ndata - 1)/vol)*vol_bin;
+    double DR_mean= ndata*(nrand/vol)*vol_bin;
+    double RR_mean= 0.5*nrand*((nrand - 1)/vol)*vol_bin;
+
+    // usuall two point correlation function
+    double xi0= dd0[ibin]/DD_mean - 1.0;
+    double xi2= dd2[ibin]/DD_mean;
+
+    // <delta(x) delta(y) [u(x) - u(y)]^2>
+    // (DD du^2 - 2*DR du^2 + RR du^2)/RR
+    double dduu0= xi_dduu0[ibin]/DD_mean - 2.0*xi_druu0[ibin]/DR_mean + xi_uu0[ibin]/RR_mean;
+    double dduu2= xi_dduu2[ibin]/DD_mean - 2.0*xi_druu2[ibin]/DR_mean + xi_uu2[ibin]/RR_mean;
+
+    // <delta(x) [u(x) - u(y)]>
+    // (DR du - RR du)
+    double du1= xi_ddu1[ibin]/DR_mean - xi_rru1[ibin]/RR_mean;
+
+    // <[u(x) - u(y)]^2>
+
+    if(rr_pairs[ibin] > 0) {
+      xi_uu0[ibin] /= rr_pairs[ibin];
+      xi_uu2[ibin] /= rr_pairs[ibin];
+    }
+
+    // 5.0 = 2*l + 1 for quadrupole
+    // 3.0 = 2*l + 1 for dipole
+    printf("%le %le %le %le %le %le %le %le %le %le %le %le %le\n",
+	   r_mid,
+	   xi0, 5.0*xi2, 0.0,
+	   xi_uu0[ibin], xi_uu2[ibin], 0.0,
+	   dduu0, 5.0*dduu2, 0.0,
+	   3.0*du1, 0.0,
+	   DD_mean);
+
+    // Column  1: r [1/h Mpc] bin centre
+    // Column  2: xi_dd0 monopole
+    // Column  3: xi_dd2 quadrupole
+    // Column  4: xi_dd4 hexadecapole
+    // Column  5: <[u(x) - u(y)]^2> monopole
+    // Column  6: <[u(x) - u(y)]^2> quadrupole
+    // Column  7: <[u(x) - u(y)]^2> hexadecapole
+    // Column  8: <d(x)d(y) [u(x) - u(y)]^2 > monopole
+    // Column  9: <d(x)d(y) [u(x) - u(y)]^2 > quadrupole
+    // Column 10: <d(x)d(y) [u(x) - u(y)]^2 > hexadecapole
+    // Column 11: <d(x) [u(x) - u(y)]> (1) dipole
+    // Column 12: <d(x) [u(x) - u(y)]> (3)
+    //
+
+    
+  }
+}
+
+void compute_statistics_dd(const vector<ParticleData>& vdata,
+			   const float boxsize,
+			   const float aH)
+{
+  //
+  // Measure xi(r)
+  //
+  const float dr= 1.0;
+  const float r_max= 200;
+  const float r2_max= r_max*r_max;
+  const float half_boxsize= 0.5f*boxsize;
+  
+  float r[3];
+
+  const int nbin = round(r_max/dr) + 1;
+
+  vector<int> dd0(nbin, 0);
+  vector<double> dd2(nbin, 0.0);
+
+  cerr << "DD pair counting..." << endl;
+
+  const size_t ndata= vdata.size(); assert(ndata > 0);
+
+  //
+  // DD
+  //
+  for(size_t i=0; i<ndata; ++i) {
+    float const * const x= vdata[i].x;
+    for(size_t j=i+1; j<ndata; ++j) {
+      float const * const y= vdata[j].x;
+
+      for(int k=0; k<3; ++k) { // periodic wrapup
+	r[k]= x[k] - y[k];
+	if(r[k] > half_boxsize) r[k] -= boxsize;
+	else if(r[k] < -half_boxsize) r[k] += boxsize;
+      }
+      
+      float s2= r[0]*r[0] + r[1]*r[1] + r[2]*r[2];
+
+      if(0.0 < s2 && s2 < r2_max) {
+	float s = sqrt(s2);
+	float nu = r[2]/s;
+	float P2 = 1.5f*nu*nu - 0.5f;
+
+	int ibin= static_cast<int>(s/dr);
+	dd0[ibin]++;
+	dd2[ibin] += P2;
+      }
+    }
+  }
+
+  printf("# ndata %zd\n", ndata);
+
+  const double vol= boxsize*boxsize*boxsize;
+
+  for(int ibin=0; ibin<nbin-1; ++ibin) {
+    // bin range
+    double r_left= ibin*dr;
+    double r_right= (ibin + 1)*dr;
+    double r_mid= (ibin + 0.5)*dr;
+    double vol_bin= 4.0/3.0*M_PI*(pow(r_right, 3) - pow(r_left, 3));
+    double DD_mean= 0.5*ndata*((ndata - 1)/vol)*vol_bin;
+
+    // usuall two point correlation function
+    double xi0= dd0[ibin]/DD_mean - 1.0;
+    double xi2= dd2[ibin]/DD_mean;
+
+    // 5.0 = 2*l + 1 for quadrupole
+    // 3.0 = 2*l + 1 for dipole
+    printf("%le %le %le %le %le\n",
+	   r_mid,
+	   xi0, 5.0*xi2, 0.0,
+	   DD_mean);
+
+    // Column  1: r [1/h Mpc] bin centre
+    // Column  2: xi_dd0 monopole
+    // Column  3: xi_dd2 quadrupole
+    // Column  4: xi_dd4 hexadecapole
+    //
+
+    
+  }
+}
 
