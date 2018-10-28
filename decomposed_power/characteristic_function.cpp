@@ -131,8 +131,8 @@ int main(int argc, char* argv[])
 
   long double sigma2= 0.0;
 
-  for(vector<ParticleData>::iterator p= v.begin();
-      p != v.end(); ++p) {
+  for(vector<ParticleData>::iterator p= vrand.begin();
+      p != vrand.end(); ++p) {
     double u= p->v[2]/aH;
     
     sigma2 += u*u;
