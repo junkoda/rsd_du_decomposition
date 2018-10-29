@@ -32,20 +32,20 @@ int main(int argc, char* argv[])
   options_description opt("decomposed_power [options] <filename>");
   opt.add_options()
     ("help,h", "display this help")
-    //("fof-text", value<string>(), "FoF text file")
+    ("fof-text", "FoF text file")
     //("mock", value<string>(), "mock text file")
     //("gadget-binary", value<string>(), "Gadget binary file")
     ("filename", value<string>(), "particle file name")
     ("nc", value<int>()->default_value(128), "number of density mesh per dim")
-    //("boxsize", value<float>()->default_value(1000.0f), 
-    //                                             "boxsize (for subfind case only)")
-//("z", value<float>()->default_value(0.0f), "redshift for --redshift-space")
-//  ("omegam", value<float>()->default_value(0.273, "0.273"), "omega_m necessary for --redshift-space")
-    //("logMmin", value<float>()->default_value(1,"1"), 
-    //             "log Minimum halo mass")
-    //("logMmax", value<float>()->default_value(20,"20"), 
-    //             "log Maximum halo mass")
-    //("m", value<float>()->default_value(0.75187e10),"particle mass for FoF file")
+    ("boxsize", value<float>()->default_value(0.0f), 
+     "boxsize (for subfind case only)")
+    ("z", value<float>()->default_value(0.0f), "redshift for --redshift-space")
+    ("omega_m", value<float>()->default_value(0.273, "0.273"), "omega_m necessary for --redshift-space")
+    ("logMmin", value<float>()->default_value(1,"1"), 
+     "log Minimum halo mass")
+    ("logMmax", value<float>()->default_value(20,"20"), 
+     "log Maximum halo mass")
+    ("m", value<float>()->default_value(0.75187e10),"particle mass for FoF file")
     ("dk", value<float>()->default_value(0.01f, "0.01"), "output k bin widtth")
     ("kmax", value<float>()->default_value(0.0f, "0"), "output kmax (default kNq)")
     ("shot-noise", value<double>()->default_value(10.0), "value of white noize shot noise")
@@ -85,8 +85,23 @@ int main(int argc, char* argv[])
   const string filename= vm["filename"].as<string>();
   float boxsize= 0.0f;
   float a, omega_m, z;
-
-  if(filename.substr(filename.length() - 3, 3) == string(".h5")) {
+     
+  if(vm.count("fof-text")) {
+    //
+    // Read from text file
+    // nfof, x, y, z, vx, vy, vz
+    //
+    const float m=  vm["m"].as<float>();
+    const float logMmin= vm["logMmin"].as<float>();
+    const float logMmax= vm["logMmax"].as<float>();
+    boxsize= vm["boxsize"].as<float>();
+    omega_m= vm["omega_m"].as<float>();
+    const float z= vm["z"].as<float>();
+    a= 1.0f/(1.0f + z);
+    
+    read_fof_text(filename.c_str(), v, m, logMmin, logMmax);
+  }
+  else if(filename.substr(filename.length() - 3, 3) == string(".h5")) {
     hdf5_read(filename.c_str(), v, boxsize, omega_m, a);
   }
   else if(filename.substr(filename.length() - 2, 2) == string(".b")) {
