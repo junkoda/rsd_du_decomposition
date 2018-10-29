@@ -123,6 +123,8 @@ int main(int argc, char* argv[])
   vector<ParticleData> vrand;
   calculate_nearest_particle_u(v, boxsize, vrand, nrand);
 
+  v.clear();
+
   const int nlambda= 1001;
   const double lambda_max= 10.0;
   const float omega_l= 1.0 - omega_m;
@@ -143,7 +145,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  const double np= static_cast<double>(v.size());
+  const double np= static_cast<double>(vrand.size());
   
   printf("# sigma2_v %.15le\n", static_cast<double>(sigma2/np));
   for(int ilambda=0; ilambda<nlambda; ++ilambda) {
