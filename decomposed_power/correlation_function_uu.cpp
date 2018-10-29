@@ -245,13 +245,12 @@ void compute_statistics_dduu(const vector<ParticleData>& vdata,
   const int nbin = round(r_max/dr) + 1;
 
   vector<int> dd0(nbin, 0), dr_pairs(nbin, 0), rr_pairs(nbin, 0);
-  vector<double> dd2(nbin, 0.0);
   vector<double> xi_dduu0(nbin, 0.0), xi_dduu2(nbin, 0.0);
   vector<double> xi_druu0(nbin, 0.0), xi_druu2(nbin, 0.0);
-  vector<double> xi_uu0(nbin, 0.0), xi_uu2(nbin, 0.0);
-  vector<double> xi_ddu1(nbin, 0.0);
-  vector<double> xi_dru1(nbin, 0.0);
-  vector<double> xi_rru1(nbin, 0.0);
+  vector<double> xi_uu0(nbin, 0.0), xi_uu2(nbin, 0.0), xi_uu4(nbin, 0.0);
+  vector<double> xi_ddu1(nbin, 0.0), xi_ddu3(nbin, 0.0);
+  vector<double> xi_dru1(nbin, 0.0), xi_dru3(nbin, 0.0);
+  vector<double> xi_rru1(nbin, 0.0), xi_rru3(nbin, 0.0);
 
   long double sigma2_dd= 0.0;
   long double sigma2_uu= 0.0;
@@ -275,23 +274,24 @@ void compute_statistics_dduu(const vector<ParticleData>& vdata,
 	if(r[k] > half_boxsize) r[k] -= boxsize;
 	else if(r[k] < -half_boxsize) r[k] += boxsize;
       }
-
       
       float s2= r[0]*r[0] + r[1]*r[1] + r[2]*r[2];
 
       if(0.0 < s2 && s2 < r2_max) {
-	float s = sqrt(s2);
-	float nu = r[2]/s;
-	float P2 = 1.5f*nu*nu - 0.5f;
-	float du = u - vdata[j].v[2]/aH; 
-	float du2 = du*du;
+	float s= sqrt(s2);
+	float nu= r[2]/s;
+	float nu2= nu*nu;
+	float P2= 1.5f*nu2 - 0.5f;
+	float P3= 0.5*(5.0*nu2 - 3.0)*nu;
+	float du= u - vdata[j].v[2]/aH; 
+	float du2= du*du;
 
 	int ibin= static_cast<int>(s/dr);
 	dd0[ibin]++;
-	dd2[ibin] += P2;
 	xi_dduu0[ibin] += du2;
 	xi_dduu2[ibin] += du2*P2;
 	xi_ddu1[ibin]  += du*nu;
+	xi_ddu3[ibin]  += du*P3;
       }
     }
   }
@@ -317,9 +317,11 @@ void compute_statistics_dduu(const vector<ParticleData>& vdata,
       float s2= r[0]*r[0] + r[1]*r[1] + r[2]*r[2];
 
       if(0.0 < s2 && s2 < r2_max) {
-	float s = sqrt(s2);
-	float nu = r[2]/s;
-	float P2 = 1.5f*nu*nu - 0.5f;
+	float s= sqrt(s2);
+	float nu= r[2]/s;
+	float nu2= nu*nu;
+	float P2= 1.5f*nu2 - 0.5f;
+	float P3= 0.5*(5.0*nu2 - 3.0)*nu;
 	float du = u - vrand[j].v[2]/aH; 
 	float du2 = du*du;
 
@@ -328,6 +330,7 @@ void compute_statistics_dduu(const vector<ParticleData>& vdata,
 	xi_druu0[ibin] += du2;
 	xi_druu2[ibin] += du2*P2;
 	xi_dru1[ibin]  += du*nu;
+	xi_dru3[ibin]  += du*P3;
       }
     }
   }
@@ -353,17 +356,22 @@ void compute_statistics_dduu(const vector<ParticleData>& vdata,
       float s2= r[0]*r[0] + r[1]*r[1] + r[2]*r[2];
 
       if(0.0 < s2 && s2 < r2_max) {
-	float s = sqrt(s2);
-	float nu = r[2]/s;
-	float P2 = 1.5f*nu*nu - 0.5f;
-	float du = u - vrand[j].v[2]/aH; 
+	float s= sqrt(s2);
+	float nu= r[2]/s;
+	float nu2= nu*nu;
+	float P2= 1.5f*nu2 - 0.5f;
+	float P3= 0.5*(5.0*nu2 - 3.0)*nu;
+	float P4= 0.125*(35.0f*nu2*nu2 - 30.0f*nu2 + 3.0);
+	float du= u - vrand[j].v[2]/aH; 
 	float du2 = du*du;
 
 	int ibin= static_cast<int>(s/dr);
 	rr_pairs[ibin]++;
 	xi_uu0[ibin]  += du2;
 	xi_uu2[ibin]  += du2*P2;
+	xi_uu4[ibin]  += du2*P4;
 	xi_rru1[ibin] += du*nu;
+	xi_rru3[ibin] += du*P3;
       }
     }
   }
@@ -386,16 +394,23 @@ void compute_statistics_dduu(const vector<ParticleData>& vdata,
 
     // usuall two point correlation function
     double xi0= dd0[ibin]/DD_mean - 1.0;
-    double xi2= dd2[ibin]/DD_mean;
+    //double xi2= dd2[ibin]/DD_mean;
 
     // <delta(x) delta(y) [u(x) - u(y)]^2>
     // (DD du^2 - 2*DR du^2 + RR du^2)/RR
-    double dduu0= xi_dduu0[ibin]/DD_mean - 2.0*xi_druu0[ibin]/DR_mean + xi_uu0[ibin]/RR_mean;
-    double dduu2= xi_dduu2[ibin]/DD_mean - 2.0*xi_druu2[ibin]/DR_mean + xi_uu2[ibin]/RR_mean;
+    double dduu0= xi_dduu0[ibin]/DD_mean
+                  - 2.0*xi_druu0[ibin]/DR_mean + xi_uu0[ibin]/RR_mean;
+    double dduu2= xi_dduu2[ibin]/DD_mean
+                  - 2.0*xi_druu2[ibin]/DR_mean + xi_uu2[ibin]/RR_mean;
 
+    // <delta(x) delta(y) [u(x) - u(y)]>
+    double ddu1= xi_ddu1[ibin]/DD_mean
+                 - 2.0*xi_dru1[ibin]/DR_mean + xi_rru1[ibin]/RR_mean;    
+    
     // <delta(x) [u(x) - u(y)]>
     // (DR du - RR du)
-    double du1= xi_ddu1[ibin]/DR_mean - xi_rru1[ibin]/RR_mean;
+    double du1= xi_dru1[ibin]/DR_mean - xi_rru1[ibin]/RR_mean;
+    double du3= xi_dru3[ibin]/DR_mean - xi_rru3[ibin]/RR_mean;
 
     // <[u(x) - u(y)]^2>
 
@@ -404,28 +419,26 @@ void compute_statistics_dduu(const vector<ParticleData>& vdata,
       xi_uu2[ibin] /= rr_pairs[ibin];
     }
 
-    // 5.0 = 2*l + 1 for quadrupole
-    // 3.0 = 2*l + 1 for dipole
-    printf("%le %le %le %le %le %le %le %le %le %le %le %le %le\n",
+    // Factor (2*l + 1)/2 for multipoles
+    printf("%le %le %le %le %le %le %le %le %le %le %le\n",
 	   r_mid,
-	   xi0, 5.0*xi2, 0.0,
-	   xi_uu0[ibin], xi_uu2[ibin], 0.0,
-	   dduu0, 5.0*dduu2, 0.0,
-	   3.0*du1, 0.0,
-	   DD_mean);
+	   xi0, 
+	   xi_uu0[ibin], 2.5*xi_uu2[ibin], 4.5*xi_uu4[ibin],
+	   dduu0, 2.5*dduu2, 0.0,
+	   1.5*ddu1,
+	   1.5*du1, 3.5*du3);
 
     // Column  1: r [1/h Mpc] bin centre
     // Column  2: xi_dd0 monopole
-    // Column  3: xi_dd2 quadrupole
-    // Column  4: xi_dd4 hexadecapole
-    // Column  5: <[u(x) - u(y)]^2> monopole
-    // Column  6: <[u(x) - u(y)]^2> quadrupole
-    // Column  7: <[u(x) - u(y)]^2> hexadecapole
-    // Column  8: <d(x)d(y) [u(x) - u(y)]^2 > monopole
-    // Column  9: <d(x)d(y) [u(x) - u(y)]^2 > quadrupole
-    // Column 10: <d(x)d(y) [u(x) - u(y)]^2 > hexadecapole
-    // Column 11: <d(x) [u(x) - u(y)]> (1) dipole
-    // Column 12: <d(x) [u(x) - u(y)]> (3)
+    // Column  3: <[u(x) - u(y)]^2> monopole
+    // Column  4: <[u(x) - u(y)]^2> quadrupole
+    // Column  5: <[u(x) - u(y)]^2> hexadecapole [ zero for curl free]
+    // Column  6: <d(x)d(y) [u(x) - u(y)]^2> monopole
+    // Column  7: <d(x)d(y) [u(x) - u(y)]^2> quadrupole
+    // Column  8: <d(x)d(y) [u(x) - u(y)]^2> hexadecapole
+    // Column  9: <d(x)d(y) [u(x) - u(y)]> dipole
+    // Column 10: <d(x) [u(x) - u(y)]> (1) dipole
+    // Column 11: <d(x) [u(x) - u(y)]> (3)
     //
 
     
