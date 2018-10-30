@@ -9,12 +9,8 @@
 
 #include "particle.h"
 #include "halo_file.h"
-//#include "fft_mesh.h"
 #include "nearest_nbr_velocity.h"
 #include "gadget_file2.h"
-#include "power_spectrum3b_v.h"
-#include "transformation.h"
-#include "density_mesh.h"
 #include "hdf5_write.h"
 #include "hdf5_read.h"
 
@@ -26,14 +22,14 @@ int main(int argc, char* argv[])
   //
   // Command line options
   //
-  options_description opt("decomposed_power [options] <filename>");
+  options_description opt("characterisitc_function [options] <filename>");
   opt.add_options()
     ("help,h", "display this help")
     ("fof-text", "FoF text file")
     //("mock", value<string>(), "mock text file")
     //("gadget-binary", value<string>(), "Gadget binary file")
     ("filename", value<string>(), "particle file name")
-    ("nc", value<int>()->default_value(128), "number of density mesh per dim")
+    //("nc", value<int>()->default_value(128), "number of density mesh per dim")
     ("boxsize", value<float>()->default_value(1000.0f), 
      "boxsize (with --fof-text otherwise read from particle file)")
     ("z", value<float>()->default_value(0.0f), "redshift")
@@ -61,13 +57,7 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-
-
-
     
-    //const int nc= vm["nc"].as<int>(); assert(nc > 0);
-  //const float lambda= vm["lambda"].as<float>();
-  
   //
   // Read particles
   //
@@ -105,8 +95,6 @@ int main(int argc, char* argv[])
     cerr << "Error: unknown data filename (not ending with .h5 or .b)\n";
     return 1;
   }
-
-  //z= 1.0f/a - 1.0f;
 
   cerr << "vector<ParticleData> " <<
     sizeof(ParticleData)*v.size()/(1000*1000) << " Mbytes" << endl;
@@ -161,13 +149,7 @@ int main(int argc, char* argv[])
     hdf5_write_particles(filename.c_str(), vrand, boxsize);
   }
   */
-  
-
-  // Redshift-space distortion
-  //redshift_space_distortion(v, z, omega_m, lambda);
-  //redshift_space_distortion(vrand, z, omega_m, lambda);
-  
-  
+    
   return 0;
 }
 
