@@ -419,14 +419,14 @@ void compute_statistics_dduu(const vector<ParticleData>& vdata,
       xi_uu2[ibin] /= rr_pairs[ibin];
     }
 
-    // Factor (2*l + 1)/2 for multipoles
+    // Factor (2*l + 1) for multipoles
     printf("%le %le %le %le %le %le %le %le %le %le %le\n",
 	   r_mid,
 	   xi0, 
-	   xi_uu0[ibin], 2.5*xi_uu2[ibin], 4.5*xi_uu4[ibin],
-	   dduu0, 2.5*dduu2, 0.0,
-	   1.5*ddu1,
-	   1.5*du1, 3.5*du3);
+	   xi_uu0[ibin], 5.0*xi_uu2[ibin], 9.0*xi_uu4[ibin],
+	   dduu0, 5.0*dduu2, 0.0,
+	   3.0*ddu1,
+	   3.0*du1, 7.0*du3);
 
     // Column  1: r [1/h Mpc] bin centre
     // Column  2: xi_dd0 monopole
