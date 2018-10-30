@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include <string>
 #include <sstream>
 #include <boost/program_options.hpp>
@@ -54,6 +55,7 @@ int main(int argc, char* argv[])
     ("lambda", value<string>()->default_value("1.0", "1"), "magnitude of RSD, 1.0,1.1")
     ("write-random", value<string>(), "=<filename.h5> write random particle position and velocity to HDF5")
     ("odir,o", value<string>()->default_value("."), "output directory")
+    ("subsample", value<double>(), "subsampling data by this factor")
     ;
   
   positional_options_description p;
@@ -114,7 +116,17 @@ int main(int argc, char* argv[])
 
   z= 1.0f/a - 1.0f;
 
-  //cerr << "sizeof(ParticleData) = " << sizeof(ParticleData) << endl;
+  if(vm.count("subsample")) {
+    const double subsample_factor= vm["subsample"].as<double>();
+    assert(subsample_factor <= 1.0);
+    size_t n_new= static_cast<size_t>(subsample_factor*v.size());
+
+    cerr << "subsampling data " << v.size() << " -> ";
+    random_shuffle(v.begin(), v.end());
+    v.resize(n_new);
+    cerr << v.size() << endl;
+  }
+  
   cerr << "vector<ParticleData> " << sizeof(ParticleData)*v.size()/(1000*1000) << " Mbytes" << endl;
 
   cerr << "omega_m: " << omega_m << " a: " << a << endl;
