@@ -7,8 +7,23 @@ using namespace corr_kdtree;
 // static variables and functions
 //
 static int idebug= 0;
+static int debug_count= 0;
+static int debug_efficiency= 0;
 
 static float boxsize, half_boxsize;
+static float r2_max;
+
+static inline index_t left_child(const index_t inode) {
+  return (inode << 1) + 1;
+}
+
+static inline index_t right_child(const index_t inode) {
+  return (inode << 1) + 2;
+}
+
+static inline bool isleaf(const index_t inode, const index_t nnode) {
+  return (inode << 1) + 1 >= nnode;
+}
 
 static inline float norm2(const float x[], const float y[]) {
   float dx= x[0]-y[0]; 
@@ -26,7 +41,7 @@ static inline float norm2(const float x[], const float y[]) {
   return dx*dx + dy*dy + dz*dz;
 }
 
-static inline int longest_side(float left3[], float right3[]) {
+static inline int longest_side(const float left3[], const float right3[]) {
   int k= 0;
   int length= right3[0] - left3[0];
 
@@ -39,6 +54,33 @@ static inline int longest_side(float left3[], float right3[]) {
   }
 
   return k;
+}
+
+static inline float dist1(const float left1, const float right1,
+			  const float left2, const float right2)
+{
+  // distance between two segments
+  if(right1 < left2 && left1 + boxsize > right2)
+    return min(left2 - right1, left1 + boxsize - right2);
+  if(right2 < left1 && left2 + boxsize > right1)
+    return min(left1 - right2, left2 + boxsize - right1);
+
+  return 0.0f;
+}
+
+static inline float dist2_box(const float left1[], const float right1[],
+			      const float left2[], const float right2[])
+{
+  float d[3];
+  for(int k=0; k<3; ++k) {
+    d[k]= dist1(left1[k], right1[k], left2[k], right2[k]);
+  }
+
+  //DEBUG!!!
+  //float dmin = min(min(d[0], d[1]), d[2]);
+  //return dmin*dmin;
+
+  return d[0]*d[0] + d[1]*d[1] + d[2]*d[2];
 }
 
 //
@@ -77,6 +119,12 @@ static void construct_tree_recursive(Node* const root,
 				     float left3[],
 				     float right3[]);
 
+
+void count_pairs_recursive_auto(Node const * const root,
+				const index_t inode1,
+				const index_t inode2,
+				const index_t nnodes,
+				const vector<ParticleData>& v);
 
 
 KDTree::KDTree(std::vector<ParticleData>& v,
@@ -120,6 +168,7 @@ void construct_tree_recursive(Node* const root,
   node->ibegin= ibegin;
   node->iend= iend;
 
+  assert(ibegin < iend);
   //print_particles(v, ibegin, iend);
 
   if((i_node << 1) + 1 >= n_nodes) {
@@ -129,11 +178,16 @@ void construct_tree_recursive(Node* const root,
       left3[k]= right3[k]= v[ibegin].x[k];
     }
     
-    for(index_t i=ibegin; i<iend; ++i) {
+    for(index_t i=ibegin+1; i<iend; ++i) {
       for(int k=0; k<3; ++k) {
 	if(v[i].x[k] < left3[k]) left3[k]= v[i].x[k];
 	if(v[i].x[k] > right3[k]) right3[k]= v[i].x[k];
       }
+    }
+
+    for(int k=0; k<3; ++k) {
+      node->left[k]= left3[k];
+      node->right[k]= right3[k];
     }
 
     return;
@@ -162,9 +216,90 @@ void construct_tree_recursive(Node* const root,
 
   // Update the limits of this node
   for(int k=0; k<3; ++k) {
-    left3[k]= min(left3[k], left3_next[k]);
-    right3[k]= max(right3[k], right3_next[k]);
+    node->left[k]= left3[k]= min(left3[k], left3_next[k]);
+    node->right[k]= right3[k]= max(right3[k], right3_next[k]);
+
+    assert(left3[k] <= right3[k]);
   }
 }
 
+void count_pairs_recursive_auto(Node const * const root,
+				const index_t inode1,
+				const index_t inode2,
+				const index_t nnodes,
+				const vector<ParticleData>& v)
+{
+  const float d2= dist2_box(root[inode1].left, root[inode1].right,
+			    root[inode2].left, root[inode2].right);
 
+  assert(inode1 <= inode2);
+  if(d2 > r2_max)
+    return;
+
+  const bool isleaf1= isleaf(inode1, nnodes);
+  const bool isleaf2= isleaf(inode2, nnodes);
+
+  if(!(isleaf1 || isleaf2)) {
+    count_pairs_recursive_auto(root, left_child(inode1), left_child(inode2),
+			       nnodes, v);
+    
+    count_pairs_recursive_auto(root, left_child(inode1), right_child(inode2),
+			       nnodes, v);
+
+    if(inode1 != inode2)
+      count_pairs_recursive_auto(root, right_child(inode1), left_child(inode2),
+				 nnodes, v);
+
+    count_pairs_recursive_auto(root, right_child(inode1), right_child(inode2),
+			       nnodes, v);
+  }
+  else if(isleaf1 && isleaf2) {
+    // pair counting
+
+    if(inode1 != inode2) {
+      for(index_t i=root[inode1].ibegin; i<root[inode1].iend; ++i) {
+	for(index_t j=root[inode2].ibegin; j<root[inode2].iend; ++j) {
+	  debug_efficiency++;
+	  if(norm2(v[i].x, v[j].x) < r2_max)
+	    debug_count++;
+	}
+      }
+    }
+    else {
+      const index_t iend= root[inode1].iend;
+      for(index_t i=root[inode1].ibegin; i<iend; ++i) {
+	for(index_t j=i+1; j<iend; ++j) {
+	  debug_efficiency++;
+	  if(norm2(v[i].x, v[j].x) < r2_max)
+	    debug_count++;
+	}
+      }
+    }
+
+    return;
+  }
+  else if(isleaf1) {
+    count_pairs_recursive_auto(root, inode1, left_child(inode2), nnodes, v);
+    count_pairs_recursive_auto(root, inode1, right_child(inode2), nnodes, v);
+    return;
+  }
+  else if(isleaf2) {
+    count_pairs_recursive_auto(root, left_child(inode1), inode2, nnodes, v);
+    count_pairs_recursive_auto(root, right_child(inode1), inode2, nnodes, v);
+  }
+  else {
+    assert(false);
+  }
+}
+
+namespace corr_kdtree {
+void count_pairs_auto(KDTree const * const tree,
+		      const float r_max)
+{
+  r2_max= r_max*r_max;
+
+  count_pairs_recursive_auto(tree->root, 0, 0, tree->n_nodes, tree->particles);
+
+  printf("debug count %d / %d\n", debug_count, debug_efficiency);
+}
+}

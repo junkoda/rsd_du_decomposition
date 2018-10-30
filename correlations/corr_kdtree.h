@@ -18,11 +18,14 @@ class KDTree {
   KDTree(std::vector<ParticleData>& v,
 	 const int quota, const float boxsize_);
 
- private:
+  //private:
   std::vector<ParticleData>& particles;
   Node* root;
   index_t n_nodes;
 };
+
+void count_pairs_auto(KDTree const * const tree,
+		      const float r_max);
 
 }// namespace corr_kdtree
 

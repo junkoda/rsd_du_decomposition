@@ -129,7 +129,8 @@ int main(int argc, char* argv[])
   //
   // Setup KD tree for pair traversal
   //
-  corr_kdtree::KDTree(v, 16, boxsize);
+  corr_kdtree::KDTree* tree= new corr_kdtree::KDTree(v, 16, boxsize);
+  corr_kdtree::count_pairs_auto(tree, 10.0);
   
   return 0;
 }
