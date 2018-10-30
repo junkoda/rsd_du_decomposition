@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
     //("gadget-binary", value<string>(), "Gadget binary file")
     ("filename", value<string>(), "particle file name")
     //("nc", value<int>()->default_value(128), "number of density mesh per dim")
-    ("boxsize", value<float>()->default_value(1000.0f), 
+    ("boxsize", value<float>()->default_value(0.0f), 
      "boxsize (with --fof-text otherwise read from particle file)")
     ("z", value<float>()->default_value(0.0f), "redshift")
     ("omega_m", value<float>()->default_value(0.273, "0.273"),
