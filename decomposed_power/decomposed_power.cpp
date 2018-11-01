@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
   // Read particles
   //
   vector<ParticleData> v;
-  float nbar= 0.0f;
+  //float nbar= 0.0f;
 
   const string filename= vm["filename"].as<string>();
   float boxsize= 0.0f;
@@ -137,9 +137,13 @@ int main(int argc, char* argv[])
   }
   assert(boxsize > 0.0f);
 
+
   const double nrand_inv= vm["shot-noise"].as<double>();
   size_t nrand= (size_t)(boxsize*boxsize*boxsize/nrand_inv);
-  
+
+  //
+  // setup randoms with nearest data velocities
+  //
   vector<ParticleData> vrand;
   calculate_nearest_particle_u(v, boxsize, vrand, nrand);
 
@@ -147,7 +151,11 @@ int main(int argc, char* argv[])
     string filename = vm["write-random"].as<string>();
     hdf5_write_particles(filename.c_str(), vrand, boxsize);
   }
-  
+
+  // nbar for shot noise
+  const float nbar= v.size()/(boxsize*boxsize*boxsize);
+  const float nbar_rand= vrand.size()/(boxsize*boxsize*boxsize);
+
 
   // Redshift-space distortion
   //redshift_space_distortion(v, z, omega_m, lambda);
@@ -194,7 +202,7 @@ int main(int argc, char* argv[])
       Output2D out;
       
       calc_power_spectrum_sa_2d(nc, boxsize, dmesh.data(), vmesh.data(),
-				nbar, 1/nrand_inv, neff, dk, kmax, &out);
+				nbar, nbar_rand, neff, dk, kmax, &out);
 
       sprintf(ofilename, "%s/lambda_%.2lf.h5", odir.c_str(), *lmbda);
 
@@ -203,7 +211,7 @@ int main(int argc, char* argv[])
     
     sprintf(ofilename, "%s/power_%.2lf.txt", odir.c_str(), *lmbda);
     calc_power_spectrum_sa(ofilename, nc, boxsize, dmesh.data(), vmesh.data(),
-			   nbar, 1/nrand_inv, neff, dk, kmax);
+			   nbar, nbar_rand, neff, dk, kmax);
 
   }
   

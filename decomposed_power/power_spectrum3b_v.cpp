@@ -192,6 +192,7 @@ void calc_power_spectrum_sa(const char filename[], const int nc, const float box
   //printf("# -sa; shot-noise subtraction + aliassing correction\n");
 
   FILE* fp= fopen(filename, "w"); assert(fp);
+  fprintf(fp, "# shot_noise %e %e\n", nbar_inv, nbar_inv_u);
   
   for(int j=0; j<PDD.numbin(); ++j) {
     if(PDD.n(j) > 0)
