@@ -49,6 +49,7 @@ int main(int argc, char* argv[])
     ("m", value<float>()->default_value(0.75187e10),"particle mass for FoF file")
     ("dk", value<float>()->default_value(0.01f, "0.01"), "output k bin widtth")
     ("kmax", value<float>()->default_value(0.0f, "0"), "output kmax (default kNq)")
+    ("subtract-dd-shotnoise", value<bool>()->default_value(true), "subtract data shot noise; use true for haloes, false for matter")
     ("shot-noise", value<double>()->default_value(10.0), "value of white noize shot noise")
     ("2d", "output P(k,mu)")
     //("lambda", value<float>()->default_value(1.0f, "1"), "magnitude of RSD")
@@ -153,7 +154,9 @@ int main(int argc, char* argv[])
   }
 
   // nbar for shot noise
-  const float nbar= v.size()/(boxsize*boxsize*boxsize);
+  float nbar= 0.0;
+  if(vm["subtract-dd-shotnoise"].as<bool>())
+    nbar= v.size()/(boxsize*boxsize*boxsize);
   const float nbar_rand= vrand.size()/(boxsize*boxsize*boxsize);
 
 
