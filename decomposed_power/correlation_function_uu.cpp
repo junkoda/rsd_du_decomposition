@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     ("logMmax", value<float>()->default_value(20, "20"), 
                  "log Maximum halo mass")
     ("m", value<float>()->default_value(0.75187e10),"particle mass for FoF file")
-    ("np", value<size_t>()->default_value(1000000),
+    ("np", value<size_t>()->default_value(0),
      "number of random particles")
     ("uu", "compute only uu statistics")
     ("dd", "compute only dd statistics")
@@ -123,22 +123,27 @@ int main(int argc, char* argv[])
   }
   assert(boxsize > 0.0f);
 
-  //
-  // Setup randoms
-  //
   size_t nrand= vm["np"].as<size_t>();
   
-  vector<ParticleData> vrand;
-  calculate_nearest_particle_u(v, boxsize, vrand, nrand);
-
   //
   // Subsample data
   //
-  cerr << "v subsampling " << v.size() << " -> ";
-  random_shuffle(v.begin(), v.end());
-  v.resize(nrand);
-  cerr << v.size() << endl;
-  
+  if(nrand == 0 || v.size() <= nrand) { // use all data
+    nrand= v.size();
+  }
+  else {
+    cerr << "v subsampling " << v.size() << " -> ";
+    random_shuffle(v.begin(), v.end());
+    v.resize(nrand);
+    cerr << v.size() << endl;
+  }
+
+  //
+  // Setup randoms
+  //
+  vector<ParticleData> vrand;
+  calculate_nearest_particle_u(v, boxsize, vrand, nrand);
+
 
   const float omega_l= 1.0 - omega_m;
   const float aH= 100.0*a*sqrt(omega_m/(a*a*a) + omega_l);
