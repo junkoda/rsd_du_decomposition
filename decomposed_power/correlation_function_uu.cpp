@@ -444,6 +444,8 @@ void compute_statistics_dduu(const vector<ParticleData>& vdata,
     // <[u(x) - u(y)]^2>
 
     if(rr_pairs[ibin] > 0) {
+      xi_ww0[ibin] /= rr_pairs[ibin];
+      xi_ww2[ibin] /= rr_pairs[ibin];
       xi_uu0[ibin] /= rr_pairs[ibin];
       xi_uu2[ibin] /= rr_pairs[ibin];
     }
