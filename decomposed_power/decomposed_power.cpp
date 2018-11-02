@@ -78,7 +78,11 @@ int main(int argc, char* argv[])
   const string str_lambdas= vm["lambda"].as<string>();
   vector<double> lambdas = split(str_lambdas);
 
-  
+  cerr << lambdas.size() << " lambdas: ";
+  for(int i=0; i<lambdas.size(); ++i)
+    cerr << lambdas[i] << " - ";
+  cerr << endl;
+
   //
   // Read particles
   //
@@ -216,6 +220,7 @@ int main(int argc, char* argv[])
     calc_power_spectrum_sa(ofilename, nc, boxsize, dmesh.data(), vmesh.data(),
 			   nbar, nbar_rand, neff, dk, kmax);
 
+    cerr << "go to next lambda" << endl;
   }
   
   return 0;
