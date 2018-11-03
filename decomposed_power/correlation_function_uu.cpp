@@ -302,7 +302,7 @@ void compute_statistics_dduu(const vector<ParticleData>& vdata,
 	xi_dduu2[ibin] += ux*uy*P2;
 
 	xi_ddww0[ibin] += w2;
-	xi_ddww0[ibin] += w2*P2;
+	xi_ddww2[ibin] += w2*P2;
 	//xi_ddu1[ibin]  += du*nu;
 	//xi_ddu3[ibin]  += du*P3;
       }
@@ -448,6 +448,7 @@ void compute_statistics_dduu(const vector<ParticleData>& vdata,
       xi_ww2[ibin] /= rr_pairs[ibin];
       xi_uu0[ibin] /= rr_pairs[ibin];
       xi_uu2[ibin] /= rr_pairs[ibin];
+      xi_uu4[ibin] /= rr_pairs[ibin];
     }
 
     // Factor (2*l + 1) for multipoles
