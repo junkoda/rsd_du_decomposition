@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
   options_description opt("decomposed_power [options] <filename>");
   opt.add_options()
     ("help,h", "display this help")
-    ("gadget_binary", "read gadget binary file")
+    ("gadget-binary", "read gadget binary file")
     ("fof-text", "read FoF text file: nfof x y z vx vy vz ")
     ("filename", value<string>()->default_value("smoothed.h5"),
      "particle file name")
