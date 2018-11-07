@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
     ("filename", value<string>()->default_value("smoothed.h5"),
      "particle file name")
     ("ofilename,o", value<string>(), "output file name")
-    ("nc", value<int>()->default_value(128), "number of density mesh per dim")
+    //("nc", value<int>()->default_value(128), "number of density mesh per dim")
     ("boxsize", value<double>()->default_value(0.0), 
      "boxsize (with --fof-text otherwise read from particle file)")
     ("z", value<double>()->default_value(0.0), "redshift")
@@ -131,26 +131,6 @@ int main(int argc, char* argv[])
   //debug_brute_force(v);
   
   //cerr << v.size() << " particles\n";
-
-  //
-  // Setup randoms
-  //
-  //size_t nrand= vm["np"].as<size_t>();
-  
-  //vector<ParticleData> vrand;
-  //calculate_nearest_particle_u(v, boxsize, vrand, nrand);
-
-  //
-  // Subsample data
-  //
-  //cerr << "v subsampling " << v.size() << " -> ";
-  //random_shuffle(v.begin(), v.end());
-  //v.resize(nrand);
-  //cerr << v.size() << endl;
-  
-
-  //const float omega_l= 1.0 - omega_m;
-  //const float aH= 100.0*a*sqrt(omega_m/(a*a*a) + omega_l);
 
   //
   // Setup KD tree for pair traversal

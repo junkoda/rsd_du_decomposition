@@ -1,4 +1,5 @@
 #include "kdtree.h"
+#include <iostream>
 #include <algorithm>
 
 using namespace std;
@@ -8,7 +9,7 @@ using namespace kdtree;
 // static variables and functions
 //
 static int idebug= 0;
-static int debug_count= 0;
+//static int debug_count= 0;
 static int debug_efficiency= 0;
 
 static float boxsize, half_boxsize;
@@ -63,7 +64,8 @@ static inline bool disjoint(const float x, const float r,
 {
   // The the sphere of radius r centered at x does not
   // intersect with the segment [left, right]
-  return (x + r < left && x - r + boxsize > right);
+  return ((x + r < left  && x - r + boxsize > right) ||
+	  (x - r > right && x + r - boxsize < left)); 
 }
 
 /*
@@ -329,16 +331,32 @@ int smooth_velocity_recursive(Node const * const root,
   const int k= node->k;
   int count= 0; // number of neighbors within r_mooth
 
-  if(disjoint(x[k], r_smooth, node->left[k], node->right[k]))
+  /*
+  printf("(%.1f %.1f %.1f) [%.1f %.1f] [%.1f %.1f] [%.1f %.1f]\n",
+	 x[0], x[1], x[2],
+	 node->left[0], node->right[0],
+	 node->left[1], node->right[1],
+	 node->left[2], node->right[2]);
+  */
+  /*
+  for(int l=0; l<3; ++l) {
+    if(disjoint(x[l], r_smooth, node->left[l], node->right[l])) {
+      return 0;
+    }
+  }
+  */
+
+
+  if(disjoint(x[k], r_smooth, node->left[k], node->right[k])) {
     return 0;
+  }
+
 
   if(isleaf(inode, nnodes)) {
     for(index_t i= node->ibegin; i<node->iend; ++i) {
       debug_efficiency++;
 
       if(norm2(v[i].x, x) <= r2_max) {
-	debug_count++;//DEBUG!!!
-	
 	v_sum[0] += v[i].v[0];
 	v_sum[1] += v[i].v[1];
 	v_sum[2] += v[i].v[2];
@@ -371,6 +389,7 @@ void smooth_velocity(KDTree const * const tree,
 
   vector<ParticleData>& v= tree->particles;
 
+  //int i=0;
   for(vector<ParticleData>::iterator p= v.begin();
       p != v.end(); ++p) {
     double v_sum[]= {0.0, 0.0, 0.0};
@@ -382,11 +401,8 @@ void smooth_velocity(KDTree const * const tree,
     p->vs[0]= v_sum[0]/n_sum;
     p->vs[1]= v_sum[1]/n_sum;
     p->vs[2]= v_sum[2]/n_sum;
-
-    //cerr << n_sum << endl;
   }
 
-  cerr << "debug_count " << debug_count << endl;
   cerr << "brute-forceness " << static_cast<double>(debug_efficiency)/(v.size()*v.size()) << endl;
 }
 
