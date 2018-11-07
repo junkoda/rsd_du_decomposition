@@ -36,7 +36,7 @@ halo_file.h: ../decomposed_power/halo_file.h
 hdf5_read.h: ../decomposed_power/hdf5_read.h
 	ln -s $< .
 
-halo_file.cpp: ../decomposed_power/halo_file.h
+halo_file.cpp: ../decomposed_power/halo_file.cpp
 	ln -s $< .
 
 hdf5_read.cpp: ../decomposed_power/hdf5_read.cpp
