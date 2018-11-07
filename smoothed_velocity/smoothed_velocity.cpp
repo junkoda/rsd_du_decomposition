@@ -12,7 +12,6 @@
 
 #include "particle.h"
 #include "halo_file.h"
-//#include "gadget_file2.h"
 #include "hdf5_read.h"
 #include "hdf5_write.h"
 #include "kdtree.h"
@@ -30,6 +29,7 @@ int main(int argc, char* argv[])
   options_description opt("decomposed_power [options] <filename>");
   opt.add_options()
     ("help,h", "display this help")
+    ("gadget_binary", "read gadget binary file")
     ("fof-text", "read FoF text file: nfof x y z vx vy vz ")
     ("filename", value<string>()->default_value("smoothed.h5"),
      "particle file name")
@@ -92,6 +92,9 @@ int main(int argc, char* argv[])
     a= 1.0f/(1.0f + z);
     
     read_fof_text(filename.c_str(), v, m, logMmin, logMmax);
+  }
+  else if(vm.count("gadget-binary")) {
+    read_gadget(filename.c_str(), v, boxsize, omega_m, a);
   }
   else if(filename.substr(filename.length() - 3, 3) == string(".h5")) {
     float af, omega_mf, boxsizef;

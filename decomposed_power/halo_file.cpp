@@ -4,9 +4,26 @@
 #include <cstdlib>
 #include <cmath>
 #include <cassert>
+#include "particle.h"
 #include "halo_file.h"
+#include "gadget_file2.h"
 
 using namespace std;
+
+void read_gadget(const char filename[], vector<ParticleData>& v,
+		 double& boxsize, double& omega_m, double& a)
+{
+  gadget_file<particle_data_sph_all, ParticleData> gf;
+  gf.set_cdm(&v, 1);
+  gf.set_velocity_conversion(true);
+  gf.read(filename);
+
+  boxsize = gf.get_boxsize();
+  a= gf.get_time();
+  omega_m= gf.get_header()->omega0;
+
+  assert(v.size() > 0);
+}
 
 void read_mock_text(const char filename[], vector<ParticleData>& v)
 {

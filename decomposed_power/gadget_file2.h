@@ -433,7 +433,7 @@ template<class Tgas, class Tcdm>
   // Velocity
   const float v_factor= (convert_velocity && header.hubble_param > 0.0) ?
                         sqrt(header.time) : 1.0f;
-  //std::cerr << "v_factor " << v_factor << endl;
+  std::cerr << "v_factor " << v_factor << endl;
   assert(v_factor > 0.0f && v_factor <= 1.01f);
   
 

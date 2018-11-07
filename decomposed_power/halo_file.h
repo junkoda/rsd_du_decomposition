@@ -4,6 +4,9 @@
 #include <vector>
 #include "particle.h"
 
+void read_gadget(const char filename[], std::vector<ParticleData>& v,
+		 double& boxsize, double& omega_m, double& a);
+
 void read_mock_text(const char filename[], std::vector<ParticleData>& v);
 void read_fof_text(const char filename[], std::vector<ParticleData>& v, 
 		   const float m, const float logMmin, const float logmMax);
