@@ -480,11 +480,11 @@ void compute_statistics_dduu(const vector<ParticleData>& vdata,
     // Column  7: <u(x) u(y)> hexadecapole
     // Column  8: <d(x)d(y) [u(x) - u(y)]^2> monopole
     // Column  9: <d(x)d(y) [u(x) - u(y)]^2> quadrupole
-    // Column  9: <d(x)d(y) [u(x) - u(y)]^2> hexadecapole
-    // Column 10: <d(x)d(y) u(x) u(y)> monopole
-    // Column 11: <d(x)d(y) u(x) u(y)> quadrupole
-    // Column 12: <d(x) u(y)]> dipole
-    // Column 13: <d(x) u(y)]> tripole
+    // Column 10: <d(x)d(y) [u(x) - u(y)]^2> hexadecapole
+    // Column 11: <d(x)d(y) u(x) u(y)> monopole
+    // Column 12: <d(x)d(y) u(x) u(y)> quadrupole
+    // Column 13: <d(x) u(y)]> dipole
+    // Column 14: <d(x) u(y)]> tripole
     //
 
     
