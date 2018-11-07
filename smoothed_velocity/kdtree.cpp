@@ -12,6 +12,7 @@ static int debug_efficiency= 0;
 
 static float boxsize, half_boxsize;
 static float r2_max;
+static float r_smooth;
 
 static inline index_t left_child(const index_t inode) {
   return (inode << 1) + 1;
@@ -56,6 +57,15 @@ static inline int longest_side(const float left3[], const float right3[]) {
   return k;
 }
 
+static inline bool disjoint(const float x, const float r,
+			    const float left, const float right)
+{
+  // The the sphere of radius r centered at x does not
+  // intersect with the segment [left, right]
+  return (x + r < left && x - r + boxsize > right);
+}
+
+/*
 static inline float dist1(const float left1, const float right1,
 			  const float left2, const float right2)
 {
@@ -82,6 +92,7 @@ static inline float dist2_box(const float left1[], const float right1[],
 
   return d[0]*d[0] + d[1]*d[1] + d[2]*d[2];
 }
+*/
 
 //
 // Sorting function
@@ -119,6 +130,13 @@ static void construct_tree_recursive(Node* const root,
 				     float left3[],
 				     float right3[]);
 
+int smooth_velocity_recursive(Node const * const root,
+			      const float x[],
+			      const index_t inode,
+			      const index_t nnodes,
+			      const vector<ParticleData>& v,
+			      double v_sum[]);
+
 KDTree::KDTree(std::vector<ParticleData>& v,
 	       const int quota, const float boxsize_) :
   particles(v)
@@ -129,6 +147,7 @@ KDTree::KDTree(std::vector<ParticleData>& v,
   
   // Set the number of nodes
   static index_t np= static_cast<index_t>(v.size());
+  
   int depth=0;
   int n= quota;
   while(n < np) {
@@ -138,6 +157,7 @@ KDTree::KDTree(std::vector<ParticleData>& v,
 
   n_nodes= (2 << depth) - 1;
   root= (Node*) malloc(sizeof(Node)*n_nodes); assert(root);
+  root->k= 0;
 
   float left3[]= {0.0f, 0.0f, 0.0f};
   float right3[]= {boxsize, boxsize, boxsize};
@@ -193,6 +213,7 @@ void construct_tree_recursive(Node* const root,
 
   // Left daughter tree
   const index_t itree_left= (i_node << 1) + 1;
+  root[itree_left].k= i;
   float right3_next[]= {right3[0], right3[1], right3[2]};
   right3_next[i]= v[imid].x[i];
 
@@ -201,6 +222,7 @@ void construct_tree_recursive(Node* const root,
 
   // Right daughter tree
   const index_t itree_right= (i_node << 1) + 2;
+  root[itree_right].k= i;
   float left3_next[]= {left3[0], left3[1], left3[2]};
   left3_next[i]= v[imid].x[i];
   construct_tree_recursive(root, itree_right, n_nodes,
@@ -215,6 +237,7 @@ void construct_tree_recursive(Node* const root,
   }
 }
 
+/*
 void count_pairs_recursive_auto(Node const * const root,
 				const index_t inode1,
 				const index_t inode2,
@@ -283,8 +306,89 @@ void count_pairs_recursive_auto(Node const * const root,
     assert(false);
   }
 }
+*/
 
+//
+// Velocity smoothing
+//
+int smooth_velocity_recursive(Node const * const root,
+				 const float x[],
+				 const index_t inode,
+				 const index_t nnodes,
+				 const vector<ParticleData>& v,
+				 double v_sum[]
+				 )
+{
+  // root: root of the kdtree
+  // x: position of the particle, centre of neighbour search
+  // inode: node of searching
+  // v_sum: sum of velocities within r_smooth
+
+  Node const * const node= root + inode;
+  const int k= node->k;
+  int count= 0; // number of neighbors within r_mooth
+
+  if(disjoint(x[k], r_smooth, node->left[k], node->right[k]))
+    return 0;
+
+  if(isleaf(inode, nnodes)) {
+    for(index_t i= node->ibegin; i<node->iend; ++i) {
+      debug_efficiency++;
+
+      if(norm2(v[i].x, x) <= r2_max) {
+	debug_count++;//DEBUG!!!
+	
+	v_sum[0] += v[i].v[0];
+	v_sum[1] += v[i].v[1];
+	v_sum[2] += v[i].v[2];
+	count++;
+      }
+    }
+    return count;
+  }
+
+  // Recursevely go down the tree
+  count += smooth_velocity_recursive(root, x,
+				     left_child(inode), nnodes, v, v_sum);
+  count += smooth_velocity_recursive(root, x,
+				     right_child(inode), nnodes, v, v_sum);
+
+  return count;
+}
+
+//
+// Public functions
+//
 namespace kdtree {
+
+void smooth_velocity(KDTree const * const tree,
+		     const float r_smooth_)
+{
+  r_smooth= r_smooth_;
+  assert(r_smooth > 0);
+  r2_max= r_smooth*r_smooth;
+
+  vector<ParticleData>& v= tree->particles;
+
+  for(vector<ParticleData>::iterator p= v.begin();
+      p != v.end(); ++p) {
+    double v_sum[]= {0.0, 0.0, 0.0};
+
+    int n_sum= smooth_velocity_recursive(tree->root, p->x, 0, tree->n_nodes,
+					 v, v_sum);
+
+    assert(n_sum > 0); // at least the particle itself must be with r_smooth
+    p->vs[0]= v_sum[0]/n_sum;
+    p->vs[1]= v_sum[1]/n_sum;
+    p->vs[2]= v_sum[2]/n_sum;
+
+    //cerr << n_sum << endl;
+  }
+
+  cerr << "debug_count " << debug_count << endl;
+  cerr << "brute-forceness " << static_cast<double>(debug_efficiency)/(v.size()*v.size()) << endl;
+}
+
   /*
 void count_pairs_auto(KDTree const * const tree,
 		      const float r_max)

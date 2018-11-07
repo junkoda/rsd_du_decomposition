@@ -10,8 +10,8 @@ using namespace std;
 
 static void read_data_scalar(hid_t loc, const char name[], void * const dat,
 			     const hid_t mem_type, const hid_t data_type);
-static int read_data_int(hid_t loc, const char name[]);
-static float read_data_float(hid_t loc, const char name[]);
+//static int read_data_int(hid_t loc, const char name[]);
+//static float read_data_float(hid_t loc, const char name[]);
 static double read_data_double(hid_t loc, const char name[]);
 
 static int read_data_length(hid_t loc, const char name[]);
@@ -129,6 +129,7 @@ void read_data_scalar(hid_t loc, const char name[], void * const dat,
   H5Sclose(scalar);
 }
 
+/*
 int read_data_int(hid_t loc, const char name[])
 {
   int dat;
@@ -144,6 +145,7 @@ float read_data_float(hid_t loc, const char name[])
 
   return dat;
 }
+*/
 
 double read_data_double(hid_t loc, const char name[])
 {

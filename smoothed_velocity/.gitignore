@@ -1,1 +1,8 @@
 smoothed_velocity
+gadget_file2.h
+halo_file.cpp
+halo_file.h
+hdf5_read.cpp
+hdf5_read.h
+hdf5_write.cpp
+hdf5_write.h
