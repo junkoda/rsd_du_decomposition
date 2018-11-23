@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
     //("nc", value<int>()->default_value(128), "number of density mesh per dim")
     ("boxsize", value<float>()->default_value(0.0f), 
      "boxsize (with --fof-text otherwise read from particle file)")
-    ("z", value<float>()->default_value(0.0f), "redshift")
+    ("z", value<float>()->default_value(-1.0f), "redshift")
     ("omega_m", value<float>()->default_value(0.273, "0.273"),
      "Omega matter (z=0)")
     ("logMmin", value<float>()->default_value(1, "1"), 
@@ -81,6 +81,7 @@ int main(int argc, char* argv[])
     boxsize= vm["boxsize"].as<float>();
     omega_m= vm["omega_m"].as<float>();
     const float z= vm["z"].as<float>();
+    assert(z >= 0.0);
     a= 1.0f/(1.0f + z);
     
     read_fof_text(filename.c_str(), v, m, logMmin, logMmax);
@@ -136,6 +137,7 @@ int main(int argc, char* argv[])
   const double np= static_cast<double>(vrand.size());
   
   printf("# sigma2_v %.15le\n", static_cast<double>(sigma2/np));
+  printf("# aH %.le\n", aH);
   for(int ilambda=0; ilambda<nlambda; ++ilambda) {
     double lmbda= lambda_max*static_cast<double>(ilambda)/(nlambda - 1);
     printf("%e %e\n", lmbda, phi[ilambda]/np);
